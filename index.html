@@ -39,10 +39,15 @@
       <button class="uc-color-btn active" data-color="w">♔ White</button>
       <button class="uc-color-btn"        data-color="b">♚ Black</button>
     </div>
+    <div id="uc-source-tabs">
+      <button class="uc-src-btn active" data-src="file">Upload file</button>
+      <button class="uc-src-btn" data-src="paste">Paste PGN</button>
+    </div>
     <label id="uc-file-label">
       <span id="uc-file-text">Choose .pgn file</span>
       <input id="uc-file" type="file" accept=".pgn,text/plain,.txt">
     </label>
+    <textarea id="uc-paste" placeholder="Paste PGN text here…" style="display:none"></textarea>
     <div id="uc-actions">
       <button id="uc-cancel-btn">Cancel</button>
       <button id="uc-submit-btn">Add Course</button>

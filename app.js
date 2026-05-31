@@ -1092,6 +1092,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('upload-course-form').style.display = 'none';
   });
 
+  document.querySelectorAll('.uc-src-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.uc-src-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const isPaste = btn.dataset.src === 'paste';
+      document.getElementById('uc-file-label').style.display = isPaste ? 'none' : '';
+      document.getElementById('uc-paste').style.display      = isPaste ? ''     : 'none';
+    });
+  });
+
   document.querySelectorAll('.uc-color-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.uc-color-btn').forEach(b => b.classList.remove('active'));
@@ -1114,21 +1124,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('uc-submit-btn').addEventListener('click', async () => {
-    const name    = document.getElementById('uc-name').value.trim();
-    const fileEl  = document.getElementById('uc-file');
-    const errorEl = document.getElementById('uc-error');
+    const name      = document.getElementById('uc-name').value.trim();
+    const fileEl    = document.getElementById('uc-file');
+    const pasteEl   = document.getElementById('uc-paste');
+    const errorEl   = document.getElementById('uc-error');
     const submitBtn = document.getElementById('uc-submit-btn');
+    const isPaste   = document.querySelector('.uc-src-btn.active')?.dataset.src === 'paste';
 
     errorEl.textContent = '';
 
-    if (!name)           { errorEl.textContent = 'Please enter a course name.'; return; }
-    if (!fileEl.files[0]) { errorEl.textContent = 'Please choose a .pgn file.'; return; }
+    if (!name) { errorEl.textContent = 'Please enter a course name.'; return; }
+    if (isPaste && !pasteEl.value.trim()) { errorEl.textContent = 'Please paste PGN text.'; return; }
+    if (!isPaste && !fileEl.files[0])     { errorEl.textContent = 'Please choose a .pgn file.'; return; }
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Parsing…';
 
     try {
-      const pgn   = await fileEl.files[0].text();
+      const pgn   = isPaste ? pasteEl.value.trim() : await fileEl.files[0].text();
       const lines = parseCourse(pgn);
       if (lines.length === 0) throw new Error('No valid lines found in this PGN.');
 
@@ -1143,6 +1156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('upload-course-form').style.display = 'none';
       document.getElementById('uc-name').value = '';
       fileEl.value = '';
+      pasteEl.value = '';
       document.getElementById('uc-file-text').textContent = 'Choose .pgn file';
       document.getElementById('uc-file-label').classList.remove('has-file');
     } catch (err) {
