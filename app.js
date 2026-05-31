@@ -943,6 +943,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       btn.classList.add('active');
       mainEl.classList.toggle('mobile-show-right', btn.dataset.panel === 'right');
       mainEl.classList.toggle('mobile-show-left',  btn.dataset.panel === 'left');
+      if (btn.dataset.lmode) {
+        document.querySelector(`.lmode-btn[data-lmode="${btn.dataset.lmode}"]`)?.click();
+      }
     });
   });
 
