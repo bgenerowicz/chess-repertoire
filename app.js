@@ -628,8 +628,8 @@ async function loadCourse(courseIdx) {
     }
     const trie = buildTrie(allLines);
     state.courseData[courseIdx] = { lines: allLines, trie };
-    statusEl.textContent = `${allLines.length} lines loaded`;
-    statusEl.className = 'ready';
+    statusEl.textContent = '';
+    statusEl.className = '';
   } catch (err) {
     statusEl.textContent = `Failed to load: ${err.message}`;
     statusEl.className = 'error';
@@ -747,6 +747,7 @@ function renderCoursesBrowser() {
   COURSES.forEach((course, courseIdx) => {
     const card = document.createElement('div');
     card.className = 'course-card';
+    card.dataset.courseIdx = courseIdx;
 
     // ── Header row ──────────────────────────────────────
     const header = document.createElement('div');
@@ -763,9 +764,8 @@ function renderCoursesBrowser() {
 
     const meta = document.createElement('span');
     meta.className = 'course-card-meta';
-    const lineCount = state.courseData[courseIdx]?.lines.length;
     const orientLabel = course.orientation === 'w' ? '♔' : '♚';
-    meta.textContent = lineCount != null ? `${orientLabel} ${lineCount} lines` : orientLabel;
+    meta.textContent = orientLabel;
 
     const delBtn = document.createElement('button');
     delBtn.className = 'course-card-delete';
@@ -791,8 +791,6 @@ function renderCoursesBrowser() {
         linesDiv.innerHTML = '<p class="course-chapter-heading">Loading…</p>';
         await loadCourse(courseIdx);
         renderCourseLines(linesDiv, courseIdx);
-        // update line count in meta
-        meta.textContent = `${orientLabel} ${state.courseData[courseIdx].lines.length} lines`;
       } else if (isOpen && linesDiv.children.length === 0) {
         renderCourseLines(linesDiv, courseIdx);
       }
@@ -955,6 +953,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('info-close-btn').addEventListener('click', () => infoModal.style.display = 'none');
   infoModal.addEventListener('click', e => { if (e.target === infoModal) infoModal.style.display = 'none'; });
 
+  // Practice lines modal
+  document.getElementById('plm-close').addEventListener('click', closePracticeLinesModal);
+  document.getElementById('practice-lines-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('practice-lines-modal')) closePracticeLinesModal();
+  });
+
   // Analyze button
   document.getElementById('analyze-btn').addEventListener('click', handleAnalyze);
 
@@ -1003,6 +1007,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Back button
   document.getElementById('back-btn').addEventListener('click', () => {
     const backBtn = document.getElementById('back-btn');
+    if (backBtn._practiceReturn) {
+      backBtn._practiceReturn = false;
+      backBtn.textContent = '← Back to analysis';
+      const mainEl = document.querySelector('main');
+      mainEl.classList.remove('mobile-show-study');
+      mainEl.classList.add('mobile-show-right');
+      document.querySelectorAll('.mobile-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.panel === 'right' && !b.dataset.lmode));
+      showPanel('practice');
+      return;
+    }
     if (backBtn._coursesReturn) {
       // Came from courses browser — go back there
       backBtn._coursesReturn = false;
@@ -1166,9 +1181,15 @@ function startPractice() {
     return;
   }
 
-  // Merge lines from all selected courses into a single trie
-  const allLines = selected.flatMap(i => state.courseData[i].lines);
-  state.practiceData = { lines: allLines, trie: buildTrie(allLines) };
+  // Merge lines from all selected courses into a single trie, tracking course boundaries
+  const allLines = [];
+  const courseOffsets = [];
+  for (const i of selected) {
+    const courseLines = state.courseData[i].lines;
+    courseOffsets.push({ courseIdx: i, start: allLines.length, end: allLines.length + courseLines.length });
+    allLines.push(...courseLines);
+  }
+  state.practiceData = { lines: allLines, trie: buildTrie(allLines), courseOffsets };
 
   state.practiceColor   = orientations[0];
   state.practiceChess   = new Chess();
@@ -1356,10 +1377,25 @@ function finishPractice(completed) {
 
   if (completed) {
     setPracticeMsg(`Line complete! ${userMoves} move${userMoves !== 1 ? 's' : ''} played.`, true);
+    updateMobilePracticeBar('complete');
     revealPracticeAnalysis();
   } else {
     showDeviationPrompt();
   }
+}
+
+function practiceSourceCourse() {
+  if (!state.practiceData?.courseOffsets) return null;
+  for (let i = state.practiceComparison.length - 1; i >= 0; i--) {
+    const m = state.practiceComparison[i];
+    if (m.lineIndices?.length) {
+      const lineIdx = m.lineIndices[0];
+      for (const { courseIdx, start, end } of state.practiceData.courseOffsets) {
+        if (lineIdx >= start && lineIdx < end) return courseIdx;
+      }
+    }
+  }
+  return [...state.practiceSelectedCourses][0] ?? null;
 }
 
 function showDeviationPrompt() {
@@ -1375,6 +1411,7 @@ function showDeviationPrompt() {
 
   document.getElementById('deviation-prompt').style.display = '';
   document.getElementById('practice-turn-msg').style.display = 'none';
+  updateMobilePracticeBar('deviation', { played: dev?.san || '?', alts, sourceCourse: practiceSourceCourse() });
   showPanel('practice');
   updateContinueBar();
 }
@@ -1483,6 +1520,84 @@ function updateContinueBar() {
   bar.style.display = (inBook && state.navIdx > 0) ? '' : 'none';
 }
 
+function resolveLineIdx(mergedIdx) {
+  if (!state.practiceData?.courseOffsets) return null;
+  for (const { courseIdx, start, end } of state.practiceData.courseOffsets) {
+    if (mergedIdx >= start && mergedIdx < end) return { courseIdx, lineIdx: mergedIdx - start };
+  }
+  return null;
+}
+
+function showPracticeLinesModal() {
+  const comparison = state.practiceComparison;
+  const lines = state.practiceData?.lines;
+  if (!comparison || !lines) return;
+
+  const normalized = comparison.map(m => ({ ...m, status: m.status === 'computer' ? 'in-book' : m.status }));
+  const matched = getMatchedLines(normalized, lines);
+  const listEl = document.getElementById('plm-list');
+  listEl.innerHTML = '';
+
+  if (matched.length === 0) {
+    listEl.innerHTML = '<p class="plm-empty">No matching lines found.</p>';
+  } else {
+    for (const { line, lineIdx, depth } of matched) {
+      const resolved = resolveLineIdx(lineIdx);
+      if (!resolved) continue;
+      const courseName = COURSES[resolved.courseIdx]?.name || '';
+      const item = document.createElement('div');
+      item.className = 'plm-item';
+      item.innerHTML = `
+        <div class="plm-course">${escHtml(courseName)}</div>
+        <div class="plm-line">${escHtml(line.name || line.chapter || '—')}</div>
+        <div class="plm-depth">${depth} move${depth !== 1 ? 's' : ''} matched</div>`;
+      item.addEventListener('click', () => {
+        closePracticeLinesModal();
+        browseCourseLine(resolved.courseIdx, resolved.lineIdx);
+        const mainEl = document.querySelector('main');
+        mainEl.classList.remove('mobile-show-right', 'mobile-show-left');
+        mainEl.classList.add('mobile-show-study');
+        document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
+        // Mark back-btn so it returns to practice state
+        const backBtn = document.getElementById('back-btn');
+        backBtn._practiceReturn = true;
+      });
+      listEl.appendChild(item);
+    }
+  }
+
+  document.getElementById('practice-lines-modal').style.display = '';
+}
+
+function closePracticeLinesModal() {
+  document.getElementById('practice-lines-modal').style.display = 'none';
+}
+
+function updateMobilePracticeBar(mode, data = {}) {
+  const bar = document.getElementById('mobile-practice-bar');
+  if (!bar) return;
+  if (!state.practiceActive && mode === 'turn') { bar.style.display = 'none'; return; }
+  bar.style.display = '';
+
+  if (mode === 'turn') {
+    bar.innerHTML = `<span class="mpb-turn">${data.isPlayerTurn ? '♟ Your move' : '⏳ Book is thinking…'}</span>`;
+  } else if (mode === 'deviation') {
+    bar.innerHTML = `
+      <div class="mpb-wrong">Wrong move: ${data.played}</div>
+      ${data.alts.length ? `<div class="mpb-book">Book says: <strong>${data.alts.join(' or ')}</strong></div>` : ''}
+      <div class="mpb-btns">
+        <button id="mpb-retry">↩ Retry</button>
+        <button class="mpb-primary" id="mpb-course">Study course</button>
+      </div>`;
+    document.getElementById('mpb-retry').addEventListener('click', () =>
+      document.getElementById('retry-btn').click());
+    document.getElementById('mpb-course').addEventListener('click', showPracticeLinesModal);
+  } else if (mode === 'complete') {
+    bar.innerHTML = `<span class="mpb-turn">✓ Line complete!</span>`;
+    if (!state.practiceActive) setTimeout(() => { bar.style.display = 'none'; }, 3000);
+  }
+}
+
 function updatePracticePanel() {
   const userDepth = state.practiceComparison.filter(m => m.status !== 'computer').length;
 
@@ -1506,9 +1621,9 @@ function updatePracticePanel() {
   const turnEl = document.getElementById('practice-turn-msg');
   if (turnEl && state.practiceChess) {
     const turn = state.practiceChess.turn();
-    turnEl.textContent = turn === state.practiceColor
-      ? 'Your move'
-      : 'Book is thinking…';
+    const isPlayerTurn = turn === state.practiceColor;
+    turnEl.textContent = isPlayerTurn ? 'Your move' : 'Book is thinking…';
+    updateMobilePracticeBar('turn', { isPlayerTurn });
   }
 }
 

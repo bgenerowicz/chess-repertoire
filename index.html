@@ -112,6 +112,7 @@
         <button id="end-btn" title="End">⏭</button>
       </div>
       <div id="position-comment"></div>
+      <div id="mobile-practice-bar" style="display:none"></div>
       <!-- Appears when navigating back through a finished practice game -->
       <div id="continue-bar" style="display:none">
         <button id="continue-from-btn">▶ Continue from here</button>
@@ -164,6 +165,16 @@
       </div>
     </section>
   </main>
+
+  <div id="practice-lines-modal" style="display:none">
+    <div id="plm-box">
+      <div id="plm-header">
+        <span id="plm-title">Matching lines</span>
+        <button id="plm-close">×</button>
+      </div>
+      <div id="plm-list"></div>
+    </div>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
   <script src="app.js"></script>
