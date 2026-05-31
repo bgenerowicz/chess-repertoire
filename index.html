@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Repertoire Trainer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>♟ Repertoire Trainer</h1>
+    <div id="course-tabs">
+      <!-- tabs rendered dynamically by renderCourseTabs() -->
+    </div>
+    <button id="add-course-btn" title="Add repertoire PGN">+</button>
+    <div id="header-status"></div>
+    <button id="info-btn" title="About data storage">?</button>
+  </header>
+
+  <div id="info-modal" style="display:none">
+    <div id="info-modal-box">
+      <h2>Your data stays on your device</h2>
+      <p>All courses you upload are stored in your browser's <strong>IndexedDB</strong> — a local database built into your browser. Nothing is ever sent to a server.</p>
+      <p>Your courses will persist across page reloads, but will be <strong>permanently deleted</strong> if you:</p>
+      <ul>
+        <li>Clear your browser's site data or cookies</li>
+        <li>Use "Clear browsing data" in your browser settings</li>
+        <li>Browse in private / incognito mode</li>
+      </ul>
+      <p>To back up your courses, keep a copy of your original <strong>.pgn files</strong>.</p>
+      <button id="info-close-btn">Got it</button>
+    </div>
+  </div>
+
+  <!-- Upload form (hidden until + is clicked) -->
+  <div id="upload-course-form" style="display:none">
+    <input id="uc-name"  type="text"   placeholder="Course name (e.g. My Sicilian)">
+    <div id="uc-color-picker">
+      <button class="uc-color-btn active" data-color="w">♔ White</button>
+      <button class="uc-color-btn"        data-color="b">♚ Black</button>
+    </div>
+    <label id="uc-file-label">
+      <span id="uc-file-text">Choose .pgn file</span>
+      <input id="uc-file" type="file" accept=".pgn">
+    </label>
+    <div id="uc-actions">
+      <button id="uc-cancel-btn">Cancel</button>
+      <button id="uc-submit-btn">Add Course</button>
+    </div>
+    <p id="uc-error"></p>
+  </div>
+
+  <main>
+    <!-- Left panel -->
+    <section id="left-panel">
+      <div id="left-mode-toggle">
+        <button class="lmode-btn active" data-lmode="analyze">Analyze</button>
+        <button class="lmode-btn" data-lmode="practice">Practice</button>
+        <button class="lmode-btn" data-lmode="courses">Courses</button>
+      </div>
+
+      <!-- Analyze section -->
+      <div id="analyze-section">
+        <h2>Your Game</h2>
+        <textarea id="pgn-input" placeholder="Paste your game PGN here...&#10;&#10;[Event &quot;Blitz&quot;]&#10;[White &quot;You&quot;]&#10;...&#10;1. e4 e5 2. Nf3 ..."></textarea>
+        <button id="analyze-btn">Analyze Game</button>
+        <p id="upload-error"></p>
+        <div id="upload-hint">
+          <p>Tip: Export your game from chess.com or Lichess as PGN and paste it above.</p>
+        </div>
+      </div>
+
+      <!-- Courses browser section -->
+      <div id="courses-section" style="display:none">
+        <div id="courses-list">
+          <!-- populated by renderCoursesBrowser() -->
+        </div>
+      </div>
+
+      <!-- Practice section -->
+      <div id="practice-section" style="display:none">
+        <h2>Practice vs Book</h2>
+        <div id="practice-course-list">
+          <!-- populated by renderPracticeCourseList() -->
+        </div>
+        <p id="practice-color-display"></p>
+        <div id="practice-actions">
+          <button id="start-practice-btn">Start</button>
+          <button id="reset-practice-btn" style="display:none">↺ New Game</button>
+        </div>
+        <p id="practice-status-msg"></p>
+        <div id="practice-inline-moves"></div>
+      </div>
+    </section>
+
+    <!-- Center: board -->
+    <section id="board-panel">
+      <div id="chessboard"></div>
+      <div id="board-controls">
+        <button id="start-btn" title="Start">⏮</button>
+        <button id="prev-btn" title="Previous">◀</button>
+        <span id="move-indicator">—</span>
+        <button id="next-btn" title="Next">▶</button>
+        <button id="end-btn" title="End">⏭</button>
+      </div>
+      <div id="position-comment"></div>
+      <!-- Appears when navigating back through a finished practice game -->
+      <div id="continue-bar" style="display:none">
+        <button id="continue-from-btn">▶ Continue from here</button>
+      </div>
+    </section>
+
+    <!-- Right: analysis / study / practice -->
+    <section id="right-panel">
+      <div id="empty-state">
+        <p id="empty-state-msg">Click <strong>+</strong> in the header to add a repertoire PGN, then paste a game to analyze it.</p>
+      </div>
+
+      <div id="analysis-view" style="display:none">
+        <h2>Game Analysis</h2>
+        <div id="move-list"></div>
+        <div id="deviation-info"></div>
+        <div id="matched-lines-section">
+          <h3>Matching Repertoire Lines</h3>
+          <div id="matched-lines"></div>
+        </div>
+      </div>
+
+      <div id="study-view" style="display:none">
+        <button id="back-btn">← Back to analysis</button>
+        <div id="study-header">
+          <div id="study-course-label"></div>
+          <div id="study-line-title"></div>
+        </div>
+        <div id="study-moves"></div>
+        <div id="study-annotation"></div>
+      </div>
+
+      <!-- Practice live view -->
+      <div id="practice-view" style="display:none">
+        <h2>Practice</h2>
+        <div id="practice-depth-bar">
+          <span id="practice-depth-label">0 moves deep</span>
+        </div>
+        <div id="practice-right-moves"></div>
+        <div id="practice-turn-msg"></div>
+
+        <!-- Shown on wrong move instead of immediately revealing analysis -->
+        <div id="deviation-prompt" style="display:none">
+          <div id="deviation-prompt-msg"></div>
+          <div id="deviation-prompt-btns">
+            <button id="retry-btn">↩ Retry</button>
+            <button id="show-solution-btn">Show Solution</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

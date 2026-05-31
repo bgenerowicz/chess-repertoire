@@ -1,0 +1,58 @@
+# Chess Repertoire Trainer
+
+A browser-based chess opening repertoire tool. Upload PGN files, study your lines, and drill them in practice mode — all locally in your browser with no account or server required.
+
+## Features
+
+- **Upload PGN courses** — import one or more PGN files as named repertoire courses
+- **Study mode** — step through every line in a course with the board and move comments
+- **Game analysis** — paste a PGN game to see where you deviated from your repertoire
+- **Practice mode** — play your lines against the computer; select multiple courses to drill them together
+- **Persistent storage** — courses are saved in your browser's IndexedDB and restored on reload
+- **Fully local** — no server, no account, no data ever leaves your browser
+
+## Usage
+
+Open `index.html` in any modern browser, or visit the hosted version at:
+**https://bgenerowicz.github.io/chess-repertoire** *(update this URL after deploying)*
+
+### Adding a course
+
+1. Click the **+** button in the header
+2. Give the course a name and choose which colour you are playing
+3. Select a PGN file and click **Add Course**
+
+### Practice mode
+
+1. Go to the **Practice** tab in the left panel
+2. Check one or more courses (all must be the same colour)
+3. Click **Start** — the computer plays the opponent's moves, you play yours
+4. A deviation ends the line and shows you the correct move
+
+### Game analysis
+
+Paste a game PGN into the text area on the left and click **Analyze** to see which moves matched your repertoire and where you went off-book.
+
+## Running locally
+
+No build step needed. Just open `index.html` directly in a browser, or serve the folder with any static file server:
+
+```bash
+npx serve .
+# or
+python3 -m http.server
+```
+
+## Contributing
+
+Bug reports and feature suggestions are welcome via [GitHub Issues](../../issues).
+Pull requests are also welcome — please open an issue first to discuss larger changes.
+
+## Tech stack
+
+Plain HTML, CSS, and vanilla JavaScript. No frameworks, no build tools, no dependencies.
+Chess logic uses a bundled copy of [chess.js](https://github.com/jhlywa/chess.js).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
