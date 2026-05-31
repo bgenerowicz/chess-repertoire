@@ -170,7 +170,18 @@ h1 {
 }
 #uc-file-label:hover { border-color: var(--text-dim); }
 #uc-file-label.has-file { border-color: var(--in-book); color: var(--in-book); }
-#uc-file { display: none; }
+#uc-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+}
 
 #uc-actions { display: flex; gap: 6px; margin-left: auto; }
 
