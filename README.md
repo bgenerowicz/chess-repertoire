@@ -14,7 +14,7 @@ A browser-based chess opening repertoire tool. Upload PGN files, study your line
 ## Usage
 
 Open `index.html` in any modern browser, or visit the hosted version at:
-**https://bgenerowicz.github.io/chess-repertoire** *(update this URL after deploying)*
+**https://bgenerowicz.github.io/chess-repertoire**
 
 ### Adding a course
 
@@ -45,7 +45,7 @@ python3 -m http.server
 
 ## Contributing
 
-Bug reports and feature suggestions are welcome via [GitHub Issues](../../issues).
+Bug reports and feature suggestions are welcome via [GitHub Issues](https://github.com/bgenerowicz/chess-repertoire/issues).
 Pull requests are also welcome — please open an issue first to discuss larger changes.
 
 ## Tech stack

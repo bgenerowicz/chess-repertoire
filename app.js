@@ -4,9 +4,10 @@
 
 const COURSES = [];
 
+// ︎ (text variation selector) forces text rendering instead of colored emoji on iOS
 const PIECES = {
-  K:'♚', Q:'♛', R:'♜', B:'♝', N:'♞', P:'♟',
-  k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟'
+  K:'♚︎', Q:'♛︎', R:'♜︎', B:'♝︎', N:'♞︎', P:'♟︎',
+  k:'♚︎', q:'♛︎', r:'♜︎', b:'♝︎', n:'♞︎', p:'♟︎'
 };
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -932,6 +933,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderCourseTabs();
   renderPracticeCourseList();
   renderBoard(START_FEN, null, null);
+
+  // Mobile panel tabs
+  const mainEl = document.querySelector('main');
+  mainEl.classList.add('mobile-show-right');
+  document.querySelectorAll('.mobile-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mainEl.classList.toggle('mobile-show-right', btn.dataset.panel === 'right');
+      mainEl.classList.toggle('mobile-show-left',  btn.dataset.panel === 'left');
+    });
+  });
 
   // Info modal
   const infoModal = document.getElementById('info-modal');
