@@ -43,10 +43,10 @@
       <button class="uc-src-btn active" data-src="file">Upload file</button>
       <button class="uc-src-btn" data-src="paste">Paste PGN</button>
     </div>
-    <label id="uc-file-label">
+    <button id="uc-file-label" type="button">
       <span id="uc-file-text">Choose .pgn file</span>
-      <input id="uc-file" type="file">
-    </label>
+    </button>
+    <input id="uc-file" type="file">
     <textarea id="uc-paste" placeholder="Paste PGN text here…" style="display:none"></textarea>
     <div id="uc-actions">
       <button id="uc-cancel-btn">Cancel</button>
@@ -108,6 +108,7 @@
 
     <!-- Center: board -->
     <section id="board-panel">
+      <div id="swipe-hint">swipe for panel</div>
       <div id="chessboard"></div>
       <div id="board-controls">
         <button id="start-btn" title="Start">⏮</button>

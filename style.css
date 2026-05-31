@@ -159,8 +159,6 @@ h1 {
 #uc-paste:focus { outline: none; border-color: var(--accent); }
 
 #uc-file-label {
-  position: relative;
-  overflow: hidden;
   padding: 6px 12px;
   background: var(--card);
   border: 1px solid var(--border);
@@ -173,12 +171,9 @@ h1 {
 #uc-file-label:hover { border-color: var(--text-dim); }
 #uc-file-label.has-file { border-color: var(--in-book); color: var(--in-book); }
 #uc-file {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.001;
-  cursor: pointer;
+  position: fixed;
+  top: -200%;
+  left: -200%;
 }
 
 #uc-actions { display: flex; gap: 6px; margin-left: auto; }
@@ -1089,6 +1084,7 @@ h3 {
 
 /* ── Mobile layout ───────────────────── */
 #mobile-panel-tabs { display: none; }
+#swipe-hint { display: none; }
 
 @media (max-width: 768px) {
   :root { --sq-size: min(calc(100vw / 8), 50px); }
@@ -1154,6 +1150,15 @@ h3 {
     justify-content: flex-start;
     padding: 10px;
     gap: 6px;
+  }
+
+  #swipe-hint {
+    display: block;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    opacity: 0.5;
+    padding-bottom: 2px;
   }
 
   #left-mode-toggle  { display: none; }
