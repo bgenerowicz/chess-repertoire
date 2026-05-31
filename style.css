@@ -405,6 +405,7 @@ h3 {
   height: calc(var(--sq-size) * 8);
   border: 2px solid #0a0a1a;
   border-radius: 2px;
+  touch-action: none;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
