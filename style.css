@@ -1062,6 +1062,7 @@ h3 {
     gap: 6px;
   }
 
+  #left-mode-toggle { display: none; }
   #position-comment { height: 36px; }
 
   #right-panel {
