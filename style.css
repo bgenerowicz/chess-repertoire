@@ -159,6 +159,8 @@ h1 {
 #uc-paste:focus { outline: none; border-color: var(--accent); }
 
 #uc-file-label {
+  position: relative;
+  overflow: hidden;
   padding: 6px 12px;
   background: var(--card);
   border: 1px solid var(--border);
@@ -172,15 +174,11 @@ h1 {
 #uc-file-label.has-file { border-color: var(--in-book); color: var(--in-book); }
 #uc-file {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  white-space: nowrap;
-  border: 0;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
   opacity: 0;
+  cursor: pointer;
 }
 
 #uc-actions { display: flex; gap: 6px; margin-left: auto; }
