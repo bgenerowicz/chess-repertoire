@@ -2,7 +2,15 @@
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const COURSES = [];
+const COURSES = [
+  {
+    name: 'Debug: 1.e4 e5',
+    orientation: 'w',
+    builtin: true,
+    pgn: `[Event "Debug"]
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ 7. Nc3 Nxe4 8. O-O *`,
+  },
+];
 
 // ︎ (text variation selector) forces text rendering instead of colored emoji on iOS
 const PIECES = {
