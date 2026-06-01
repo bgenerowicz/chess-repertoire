@@ -1609,8 +1609,7 @@ function updateMobilePracticeBar(mode, data = {}) {
     bar.innerHTML = `<span class="mpb-turn">${data.isPlayerTurn ? '♟ Your move' : '⏳ Book is thinking…'}</span>`;
   } else if (mode === 'deviation') {
     bar.innerHTML = `
-      <div class="mpb-wrong">Wrong move: ${data.played}</div>
-      ${data.alts.length ? `<div class="mpb-book">Book says: <strong>${data.alts.join(' or ')}</strong></div>` : ''}
+      <div class="mpb-wrong">✗ ${data.played}${data.alts.length ? ` &rarr; <strong>${data.alts.join(' or ')}</strong>` : ''}</div>
       <div class="mpb-btns">
         <button id="mpb-retry">↩ Retry</button>
         <button class="mpb-primary" id="mpb-course">Study course</button>
