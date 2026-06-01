@@ -4,7 +4,7 @@
 
 const COURSES = [
   {
-    name: 'Debug: 1.e4 e5',
+    name: '1.e4 e5',
     orientation: 'w',
     builtin: true,
     pgn: `[Event "Debug"]
