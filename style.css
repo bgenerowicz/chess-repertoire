@@ -1208,5 +1208,5 @@ h3 {
   main.mobile-show-left  #board-panel { display: none; }
 
   main.mobile-show-study #left-panel  { display: none; }
-  main.mobile-show-study #right-panel { display: block; flex: 1; min-height: 0; overflow-y: auto; }
+  main.mobile-show-study #right-panel { display: block; flex: 1; min-height: 300px; overflow-y: visible; padding-bottom: 60px; }
 }
