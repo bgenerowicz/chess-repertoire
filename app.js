@@ -2,7 +2,15 @@
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const COURSES = [];
+const COURSES = [
+  {
+    name: '1.e4 e5',
+    orientation: 'w',
+    builtin: true,
+    pgn: `[Event "Debug"]
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ 7. Nc3 Nxe4 8. O-O *`,
+  },
+];
 
 // ︎ (text variation selector) forces text rendering instead of colored emoji on iOS
 const PIECES = {
@@ -947,7 +955,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Info modal
+// Info modal
   const infoModal = document.getElementById('info-modal');
   document.getElementById('info-btn').addEventListener('click', () => infoModal.style.display = 'flex');
   document.getElementById('info-close-btn').addEventListener('click', () => infoModal.style.display = 'none');
@@ -1108,6 +1116,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       btn.classList.add('active');
       ucColor = btn.dataset.color;
     });
+  });
+
+  document.getElementById('uc-file-label').addEventListener('click', () => {
+    document.getElementById('uc-file').click();
   });
 
   document.getElementById('uc-file').addEventListener('change', e => {
@@ -1597,11 +1609,10 @@ function updateMobilePracticeBar(mode, data = {}) {
     bar.innerHTML = `<span class="mpb-turn">${data.isPlayerTurn ? '♟ Your move' : '⏳ Book is thinking…'}</span>`;
   } else if (mode === 'deviation') {
     bar.innerHTML = `
-      <div class="mpb-wrong">Wrong move: ${data.played}</div>
-      ${data.alts.length ? `<div class="mpb-book">Book says: <strong>${data.alts.join(' or ')}</strong></div>` : ''}
       <div class="mpb-btns">
+        <span class="mpb-wrong">✗ ${data.played}${data.alts.length ? ` &rarr; <strong>${data.alts.join(' or ')}</strong>` : ''}</span>
         <button id="mpb-retry">↩ Retry</button>
-        <button class="mpb-primary" id="mpb-course">Study course</button>
+        <button class="mpb-primary" id="mpb-course">Study</button>
       </div>`;
     document.getElementById('mpb-retry').addEventListener('click', () =>
       document.getElementById('retry-btn').click());

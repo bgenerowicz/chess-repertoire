@@ -43,10 +43,10 @@
       <button class="uc-src-btn active" data-src="file">Upload file</button>
       <button class="uc-src-btn" data-src="paste">Paste PGN</button>
     </div>
-    <label id="uc-file-label">
+    <button id="uc-file-label" type="button">
       <span id="uc-file-text">Choose .pgn file</span>
-      <input id="uc-file" type="file" accept=".pgn,text/plain,.txt">
-    </label>
+    </button>
+    <input id="uc-file" type="file">
     <textarea id="uc-paste" placeholder="Paste PGN text here…" style="display:none"></textarea>
     <div id="uc-actions">
       <button id="uc-cancel-btn">Cancel</button>
@@ -98,12 +98,15 @@
       </div>
     </section>
 
-    <!-- Mobile tab bar (hidden on desktop) -->
-    <div id="mobile-panel-tabs">
-      <button class="mobile-tab active" data-panel="right" data-lmode="">Game</button>
-      <button class="mobile-tab" data-panel="left" data-lmode="analyze">Analyze</button>
-      <button class="mobile-tab" data-panel="left" data-lmode="practice">Practice</button>
-      <button class="mobile-tab" data-panel="left" data-lmode="courses">Courses</button>
+    <!-- Mobile bottom bar: practice feedback + tab bar (hidden on desktop) -->
+    <div id="mobile-bottom-bar">
+      <div id="mobile-practice-bar" style="display:none"></div>
+      <div id="mobile-panel-tabs">
+        <button class="mobile-tab active" data-panel="right" data-lmode="">Game</button>
+        <button class="mobile-tab" data-panel="left" data-lmode="analyze">Analyze</button>
+        <button class="mobile-tab" data-panel="left" data-lmode="practice">Practice</button>
+        <button class="mobile-tab" data-panel="left" data-lmode="courses">Courses</button>
+      </div>
     </div>
 
     <!-- Center: board -->
@@ -117,7 +120,6 @@
         <button id="end-btn" title="End">⏭</button>
       </div>
       <div id="position-comment"></div>
-      <div id="mobile-practice-bar" style="display:none"></div>
       <!-- Appears when navigating back through a finished practice game -->
       <div id="continue-bar" style="display:none">
         <button id="continue-from-btn">▶ Continue from here</button>

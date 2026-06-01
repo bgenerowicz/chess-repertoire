@@ -171,16 +171,9 @@ h1 {
 #uc-file-label:hover { border-color: var(--text-dim); }
 #uc-file-label.has-file { border-color: var(--in-book); color: var(--in-book); }
 #uc-file {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  white-space: nowrap;
-  border: 0;
-  opacity: 0;
+  position: fixed;
+  top: -200%;
+  left: -200%;
 }
 
 #uc-actions { display: flex; gap: 6px; margin-left: auto; }
@@ -412,6 +405,7 @@ h3 {
   height: calc(var(--sq-size) * 8);
   border: 2px solid #0a0a1a;
   border-radius: 2px;
+  touch-action: none;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
@@ -1119,19 +1113,23 @@ h3 {
   main {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding-bottom: 54px;
   }
 
-  #mobile-panel-tabs {
+  #mobile-bottom-bar {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 200;
-    display: flex;
     background: var(--panel);
     border-top: 1px solid var(--border);
+  }
+
+  #mobile-panel-tabs {
+    display: flex;
   }
 
   .mobile-tab {
@@ -1155,25 +1153,24 @@ h3 {
     flex-shrink: 0;
     justify-content: flex-start;
     padding: 10px;
+    padding-bottom: 130px;
     gap: 6px;
   }
 
   #left-mode-toggle  { display: none; }
 
   #mobile-practice-bar {
-    width: 100%;
     padding: 10px 14px;
-    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
     text-align: center;
     font-size: 0.85rem;
   }
-  .mpb-turn { color: var(--text-dim); }
-  .mpb-wrong { color: var(--deviation); font-weight: 600; margin-bottom: 8px; }
-  .mpb-book  { color: var(--text); margin-bottom: 10px; }
-  .mpb-btns  { display: flex; gap: 8px; justify-content: center; }
+  .mpb-turn  { color: var(--text-dim); }
+  .mpb-wrong { color: var(--deviation); font-weight: 600; flex: 1; text-align: left; font-size: 0.82rem; }
+  .mpb-btns  { display: flex; align-items: center; gap: 8px; }
   .mpb-btns button {
-    flex: 1;
-    padding: 8px 10px;
+    flex-shrink: 0;
+    padding: 6px 10px;
     border-radius: 6px;
     border: 1px solid var(--border);
     background: var(--card);
