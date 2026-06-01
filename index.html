@@ -15,7 +15,7 @@
     <button id="add-course-btn" title="Add repertoire PGN">+</button>
     <div id="header-status"></div>
     <button id="info-btn" title="About data storage">?</button>
-    <span id="dbg-ver" style="font-size:0.65rem;color:#888;white-space:nowrap">v6</span>
+    <span id="dbg-ver" style="font-size:0.65rem;color:#888;white-space:nowrap">v7</span>
   </header>
 
   <div id="info-modal" style="display:none">
@@ -99,12 +99,15 @@
       </div>
     </section>
 
-    <!-- Mobile tab bar (hidden on desktop) -->
-    <div id="mobile-panel-tabs">
-      <button class="mobile-tab active" data-panel="right" data-lmode="">Game</button>
-      <button class="mobile-tab" data-panel="left" data-lmode="analyze">Analyze</button>
-      <button class="mobile-tab" data-panel="left" data-lmode="practice">Practice</button>
-      <button class="mobile-tab" data-panel="left" data-lmode="courses">Courses</button>
+    <!-- Mobile bottom bar: practice feedback + tab bar (hidden on desktop) -->
+    <div id="mobile-bottom-bar">
+      <div id="mobile-practice-bar" style="display:none"></div>
+      <div id="mobile-panel-tabs">
+        <button class="mobile-tab active" data-panel="right" data-lmode="">Game</button>
+        <button class="mobile-tab" data-panel="left" data-lmode="analyze">Analyze</button>
+        <button class="mobile-tab" data-panel="left" data-lmode="practice">Practice</button>
+        <button class="mobile-tab" data-panel="left" data-lmode="courses">Courses</button>
+      </div>
     </div>
 
     <!-- Center: board -->
@@ -118,7 +121,6 @@
         <button id="end-btn" title="End">⏭</button>
       </div>
       <div id="position-comment"></div>
-      <div id="mobile-practice-bar" style="display:none"></div>
       <!-- Appears when navigating back through a finished practice game -->
       <div id="continue-bar" style="display:none">
         <button id="continue-from-btn">▶ Continue from here</button>

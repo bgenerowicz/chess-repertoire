@@ -1118,15 +1118,18 @@ h3 {
     padding-bottom: 54px;
   }
 
-  #mobile-panel-tabs {
+  #mobile-bottom-bar {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 200;
-    display: flex;
     background: var(--panel);
     border-top: 1px solid var(--border);
+  }
+
+  #mobile-panel-tabs {
+    display: flex;
   }
 
   .mobile-tab {
@@ -1157,14 +1160,8 @@ h3 {
   #left-mode-toggle  { display: none; }
 
   #mobile-practice-bar {
-    position: fixed;
-    bottom: 54px;
-    left: 0;
-    right: 0;
-    z-index: 150;
-    background: var(--panel);
     padding: 10px 14px;
-    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
     text-align: center;
     font-size: 0.85rem;
   }
