@@ -665,6 +665,15 @@ function handleAnalyze() {
   state.comparison = comparison;
 
   renderAnalysis(comparison, courseData.lines);
+
+  // On mobile, switch to board+analysis view
+  const mainEl = document.querySelector('main');
+  if (mainEl.classList.contains('mobile-show-left')) {
+    mainEl.classList.remove('mobile-show-left');
+    mainEl.classList.add('mobile-show-study');
+    document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('back-btn')._analyzeReturn = true;
+  }
 }
 
 function handleTabClick(courseIdx) {
@@ -1015,6 +1024,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Back button
   document.getElementById('back-btn').addEventListener('click', () => {
     const backBtn = document.getElementById('back-btn');
+    if (backBtn._analyzeReturn) {
+      backBtn._analyzeReturn = false;
+      const mainEl = document.querySelector('main');
+      mainEl.classList.remove('mobile-show-study');
+      mainEl.classList.add('mobile-show-left');
+      document.querySelectorAll('.mobile-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.lmode === 'analyze'));
+      return;
+    }
     if (backBtn._practiceReturn) {
       backBtn._practiceReturn = false;
       backBtn.textContent = '← Back to analysis';
