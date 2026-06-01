@@ -1056,15 +1056,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Back button
   document.getElementById('back-btn').addEventListener('click', () => {
     const backBtn = document.getElementById('back-btn');
-    if (backBtn._analyzeStudyReturn) {
-      backBtn._analyzeStudyReturn = false;
-      const mainEl = document.querySelector('main');
-      mainEl.classList.remove('mobile-show-study');
-      mainEl.classList.add('mobile-show-right');
-      document.querySelectorAll('.mobile-tab').forEach(b =>
-        b.classList.toggle('active', b.dataset.panel === 'right' && !b.dataset.lmode));
-      return;
-    }
     if (backBtn._analyzeReturn) {
       backBtn._analyzeReturn = false;
       const mainEl = document.querySelector('main');
@@ -1077,11 +1068,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (backBtn._practiceReturn) {
       backBtn._practiceReturn = false;
       backBtn.textContent = '← Back to analysis';
-      const mainEl = document.querySelector('main');
-      mainEl.classList.remove('mobile-show-study');
-      mainEl.classList.add('mobile-show-right');
-      document.querySelectorAll('.mobile-tab').forEach(b =>
-        b.classList.toggle('active', b.dataset.panel === 'right' && !b.dataset.lmode));
       showPanel('practice');
       return;
     }
@@ -1639,13 +1625,6 @@ function showPracticeLinesModal() {
       item.addEventListener('click', () => {
         closePracticeLinesModal();
         browseCourseLine(resolved.courseIdx, resolved.lineIdx);
-        const mainEl = document.querySelector('main');
-        mainEl.classList.remove('mobile-show-right', 'mobile-show-left');
-        mainEl.classList.add('mobile-show-study');
-        document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
-        // Mark back-btn so it returns to practice state
-        const backBtn = document.getElementById('back-btn');
-        backBtn._practiceReturn = true;
       });
       listEl.appendChild(item);
     }
@@ -1679,11 +1658,6 @@ function showAnalysisMatchedModal() {
       item.addEventListener('click', () => {
         closePracticeLinesModal();
         browseCourseLine(state.activeCourse, lineIdx);
-        const mainEl = document.querySelector('main');
-        mainEl.classList.remove('mobile-show-right', 'mobile-show-left');
-        mainEl.classList.add('mobile-show-study');
-        document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
-        document.getElementById('back-btn')._analyzeStudyReturn = true;
       });
       listEl.appendChild(item);
     }
