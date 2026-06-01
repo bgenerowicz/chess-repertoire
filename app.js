@@ -666,7 +666,7 @@ function handleAnalyze() {
 
   renderAnalysis(comparison, courseData.lines);
 
-  // On mobile, switch to board view so position-comment shows the book comment
+  // On mobile, switch to board view and show matched lines modal
   const mainEl = document.querySelector('main');
   if (mainEl.classList.contains('mobile-show-left')) {
     mainEl.classList.remove('mobile-show-left');
@@ -674,6 +674,7 @@ function handleAnalyze() {
     document.querySelectorAll('.mobile-tab').forEach(b =>
       b.classList.toggle('active', b.dataset.panel === 'right' && !b.dataset.lmode));
     document.getElementById('back-btn')._analyzeReturn = true;
+    showAnalysisMatchedModal();
   }
 }
 
@@ -1025,6 +1026,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Back button
   document.getElementById('back-btn').addEventListener('click', () => {
     const backBtn = document.getElementById('back-btn');
+    if (backBtn._analyzeStudyReturn) {
+      backBtn._analyzeStudyReturn = false;
+      const mainEl = document.querySelector('main');
+      mainEl.classList.remove('mobile-show-study');
+      mainEl.classList.add('mobile-show-right');
+      document.querySelectorAll('.mobile-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.panel === 'right' && !b.dataset.lmode));
+      return;
+    }
     if (backBtn._analyzeReturn) {
       backBtn._analyzeReturn = false;
       const mainEl = document.querySelector('main');
@@ -1616,6 +1626,40 @@ function showPracticeLinesModal() {
 
 function closePracticeLinesModal() {
   document.getElementById('practice-lines-modal').style.display = 'none';
+}
+
+function showAnalysisMatchedModal() {
+  const comparison = state.comparison;
+  const courseData = state.courseData[state.activeCourse];
+  if (!comparison || !courseData) return;
+
+  const matched = getMatchedLines(comparison, courseData.lines);
+  const listEl = document.getElementById('plm-list');
+  listEl.innerHTML = '';
+
+  if (matched.length === 0) {
+    listEl.innerHTML = '<p class="plm-empty">No matching repertoire lines.</p>';
+  } else {
+    for (const { line, lineIdx, depth } of matched) {
+      const item = document.createElement('div');
+      item.className = 'plm-item';
+      item.innerHTML = `
+        <div class="plm-line">${escHtml(line.name || line.chapter || '—')}</div>
+        <div class="plm-depth">${depth} move${depth !== 1 ? 's' : ''} matched</div>`;
+      item.addEventListener('click', () => {
+        closePracticeLinesModal();
+        browseCourseLine(state.activeCourse, lineIdx);
+        const mainEl = document.querySelector('main');
+        mainEl.classList.remove('mobile-show-right', 'mobile-show-left');
+        mainEl.classList.add('mobile-show-study');
+        document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
+        document.getElementById('back-btn')._analyzeStudyReturn = true;
+      });
+      listEl.appendChild(item);
+    }
+  }
+
+  document.getElementById('practice-lines-modal').style.display = '';
 }
 
 function updateMobilePracticeBar(mode, data = {}) {
