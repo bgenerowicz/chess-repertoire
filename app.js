@@ -974,22 +974,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dx > 0 && onLeft)   document.querySelector('.mobile-tab[data-panel="right"]')?.click();
   }, { passive: true });
 
-  // Two-finger scroll on the board scrolls the main container
-  // (touch-action:none on #chessboard blocks native scroll, so we do it manually)
-  let twoFingerY = 0;
-  const boardEl = document.getElementById('chessboard');
-  boardEl.addEventListener('touchstart', e => {
-    if (e.touches.length === 2)
-      twoFingerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-  }, { passive: true });
-  boardEl.addEventListener('touchmove', e => {
-    if (e.touches.length === 2) {
-      const y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      mainEl.scrollTop += twoFingerY - y;
-      twoFingerY = y;
-    }
-  }, { passive: true });
-
   // Info modal
   const infoModal = document.getElementById('info-modal');
   document.getElementById('info-btn').addEventListener('click', () => infoModal.style.display = 'flex');
