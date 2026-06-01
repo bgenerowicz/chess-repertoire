@@ -15,6 +15,7 @@
     <button id="add-course-btn" title="Add repertoire PGN">+</button>
     <div id="header-status"></div>
     <button id="info-btn" title="About data storage">?</button>
+    <span id="dbg-ver" style="font-size:0.65rem;color:#888;white-space:nowrap">v15</span>
   </header>
 
   <div id="info-modal" style="display:none">
@@ -67,12 +68,14 @@
       <!-- Analyze section -->
       <div id="analyze-section">
         <h2>Your Game</h2>
+        <div id="lichess-import">
+          <input id="lichess-username" type="text" placeholder="Lichess username" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <button id="lichess-import-btn">Import last game</button>
+          <p id="lichess-error"></p>
+        </div>
         <textarea id="pgn-input" placeholder="Paste your game PGN here...&#10;&#10;[Event &quot;Blitz&quot;]&#10;[White &quot;You&quot;]&#10;...&#10;1. e4 e5 2. Nf3 ..."></textarea>
         <button id="analyze-btn">Analyze Game</button>
         <p id="upload-error"></p>
-        <div id="upload-hint">
-          <p>Tip: Export your game from chess.com or Lichess as PGN and paste it above.</p>
-        </div>
       </div>
 
       <!-- Courses browser section -->

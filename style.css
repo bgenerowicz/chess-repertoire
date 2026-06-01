@@ -387,6 +387,43 @@ h3 {
   min-height: 18px;
 }
 
+#lichess-import {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+#lichess-username {
+  flex: 1;
+  min-width: 120px;
+  padding: 6px 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+#lichess-username:focus { outline: none; border-color: var(--accent); }
+#lichess-import-btn {
+  padding: 6px 10px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#lichess-import-btn:disabled { opacity: 0.5; cursor: default; }
+#lichess-error {
+  width: 100%;
+  color: var(--deviation);
+  font-size: 0.8rem;
+  min-height: 0;
+}
+
 #upload-hint {
   font-size: 0.75rem;
   color: var(--text-muted);
@@ -1207,6 +1244,5 @@ h3 {
   main.mobile-show-left  #right-panel { display: none; }
   main.mobile-show-left  #board-panel { display: none; }
 
-  main.mobile-show-study #left-panel  { display: none; }
-  main.mobile-show-study #right-panel { display: block; flex: 1; min-height: 0; overflow-y: auto; }
+
 }
