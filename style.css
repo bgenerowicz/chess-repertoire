@@ -1151,6 +1151,7 @@ h3 {
     flex-shrink: 0;
     justify-content: flex-start;
     padding: 10px;
+    padding-bottom: 130px;
     gap: 6px;
   }
 
@@ -1166,7 +1167,12 @@ h3 {
   #left-mode-toggle  { display: none; }
 
   #mobile-practice-bar {
-    width: 100%;
+    position: fixed;
+    bottom: 54px;
+    left: 0;
+    right: 0;
+    z-index: 150;
+    background: var(--panel);
     padding: 10px 14px;
     border-top: 1px solid var(--border);
     text-align: center;
