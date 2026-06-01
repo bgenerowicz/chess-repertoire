@@ -1609,10 +1609,10 @@ function updateMobilePracticeBar(mode, data = {}) {
     bar.innerHTML = `<span class="mpb-turn">${data.isPlayerTurn ? '♟ Your move' : '⏳ Book is thinking…'}</span>`;
   } else if (mode === 'deviation') {
     bar.innerHTML = `
-      <div class="mpb-wrong">✗ ${data.played}${data.alts.length ? ` &rarr; <strong>${data.alts.join(' or ')}</strong>` : ''}</div>
       <div class="mpb-btns">
+        <span class="mpb-wrong">✗ ${data.played}${data.alts.length ? ` &rarr; <strong>${data.alts.join(' or ')}</strong>` : ''}</span>
         <button id="mpb-retry">↩ Retry</button>
-        <button class="mpb-primary" id="mpb-course">Study course</button>
+        <button class="mpb-primary" id="mpb-course">Study</button>
       </div>`;
     document.getElementById('mpb-retry').addEventListener('click', () =>
       document.getElementById('retry-btn').click());

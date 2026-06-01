@@ -1165,13 +1165,12 @@ h3 {
     text-align: center;
     font-size: 0.85rem;
   }
-  .mpb-turn { color: var(--text-dim); }
-  .mpb-wrong { color: var(--deviation); font-weight: 600; margin-bottom: 8px; }
-  .mpb-book  { color: var(--text); margin-bottom: 10px; }
-  .mpb-btns  { display: flex; gap: 8px; justify-content: center; }
+  .mpb-turn  { color: var(--text-dim); }
+  .mpb-wrong { color: var(--deviation); font-weight: 600; flex: 1; text-align: left; font-size: 0.82rem; }
+  .mpb-btns  { display: flex; align-items: center; gap: 8px; }
   .mpb-btns button {
-    flex: 1;
-    padding: 8px 10px;
+    flex-shrink: 0;
+    padding: 6px 10px;
     border-radius: 6px;
     border: 1px solid var(--border);
     background: var(--card);
