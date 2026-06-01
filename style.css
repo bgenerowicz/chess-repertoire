@@ -1085,7 +1085,6 @@ h3 {
 
 /* ── Mobile layout ───────────────────── */
 #mobile-panel-tabs { display: none; }
-#swipe-hint { display: none; }
 
 @media (max-width: 768px) {
   :root { --sq-size: min(calc(100vw / 8), 50px); }
@@ -1153,15 +1152,6 @@ h3 {
     padding: 10px;
     padding-bottom: 130px;
     gap: 6px;
-  }
-
-  #swipe-hint {
-    display: block;
-    text-align: center;
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    opacity: 0.5;
-    padding-bottom: 2px;
   }
 
   #left-mode-toggle  { display: none; }

@@ -943,38 +943,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Mobile panel tabs
   const mainEl = document.querySelector('main');
   mainEl.classList.add('mobile-show-right');
-  let lastLeftTab = document.querySelector('.mobile-tab[data-panel="left"]');
   document.querySelectorAll('.mobile-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       mainEl.classList.toggle('mobile-show-right', btn.dataset.panel === 'right');
       mainEl.classList.toggle('mobile-show-left',  btn.dataset.panel === 'left');
-      if (btn.dataset.panel === 'left') lastLeftTab = btn;
       if (btn.dataset.lmode) {
         document.querySelector(`.lmode-btn[data-lmode="${btn.dataset.lmode}"]`)?.click();
       }
     });
   });
 
-  // Mobile swipe navigation between board and panels
-  let swipeSX = 0, swipeSY = 0;
-  mainEl.addEventListener('touchstart', e => {
-    swipeSX = e.touches[0].clientX;
-    swipeSY = e.touches[0].clientY;
-  }, { passive: true });
-  mainEl.addEventListener('touchend', e => {
-    if (drag.active) return;
-    const dx = e.changedTouches[0].clientX - swipeSX;
-    const dy = e.changedTouches[0].clientY - swipeSY;
-    if (Math.abs(dx) < 80 || Math.abs(dx) < Math.abs(dy) * 2.5) return;
-    const onBoard = mainEl.classList.contains('mobile-show-right') || mainEl.classList.contains('mobile-show-study');
-    const onLeft  = mainEl.classList.contains('mobile-show-left');
-    if (dx < 0 && onBoard)  lastLeftTab?.click();
-    if (dx > 0 && onLeft)   document.querySelector('.mobile-tab[data-panel="right"]')?.click();
-  }, { passive: true });
-
-  // Info modal
+// Info modal
   const infoModal = document.getElementById('info-modal');
   document.getElementById('info-btn').addEventListener('click', () => infoModal.style.display = 'flex');
   document.getElementById('info-close-btn').addEventListener('click', () => infoModal.style.display = 'none');
