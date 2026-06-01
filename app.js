@@ -966,7 +966,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-// Info modal
+// Lichess import
+  const lichessUsernameEl = document.getElementById('lichess-username');
+  lichessUsernameEl.value = localStorage.getItem('lichessUsername') || '';
+  document.getElementById('lichess-import-btn').addEventListener('click', async () => {
+    const username = lichessUsernameEl.value.trim();
+    const errorEl  = document.getElementById('lichess-error');
+    const btn      = document.getElementById('lichess-import-btn');
+    errorEl.textContent = '';
+    if (!username) { errorEl.textContent = 'Enter a username.'; return; }
+    localStorage.setItem('lichessUsername', username);
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    try {
+      const res = await fetch(
+        `https://lichess.org/api/games/user/${encodeURIComponent(username)}?max=1`,
+        { headers: { Accept: 'application/x-chess-pgn' } }
+      );
+      if (res.status === 404) throw new Error('User not found.');
+      if (!res.ok) throw new Error(`Lichess returned ${res.status}.`);
+      const pgn = (await res.text()).trim();
+      if (!pgn) throw new Error('No games found for this user.');
+      document.getElementById('pgn-input').value = pgn;
+    } catch (err) {
+      errorEl.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Import last game';
+    }
+  });
+
+  // Info modal
   const infoModal = document.getElementById('info-modal');
   document.getElementById('info-btn').addEventListener('click', () => infoModal.style.display = 'flex');
   document.getElementById('info-close-btn').addEventListener('click', () => infoModal.style.display = 'none');
