@@ -466,6 +466,8 @@ function renderAnalysis(comparison, lines) {
       state.navIdx = i + 1;
       updateBoardDisplay();
       updateContinueBar();
+      const commentEl = document.getElementById('analysis-comment');
+      if (commentEl) commentEl.textContent = m.bookComment || '';
     });
     moveListEl.appendChild(token);
   }
@@ -666,11 +668,11 @@ function handleAnalyze() {
 
   renderAnalysis(comparison, courseData.lines);
 
-  // On mobile, switch to board+analysis view
+  // On mobile, switch to full-screen analysis view (no board)
   const mainEl = document.querySelector('main');
   if (mainEl.classList.contains('mobile-show-left')) {
     mainEl.classList.remove('mobile-show-left');
-    mainEl.classList.add('mobile-show-study');
+    mainEl.classList.add('mobile-show-analysis');
     document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
     document.getElementById('back-btn')._analyzeReturn = true;
   }
@@ -1027,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (backBtn._analyzeReturn) {
       backBtn._analyzeReturn = false;
       const mainEl = document.querySelector('main');
-      mainEl.classList.remove('mobile-show-study');
+      mainEl.classList.remove('mobile-show-analysis');
       mainEl.classList.add('mobile-show-left');
       document.querySelectorAll('.mobile-tab').forEach(b =>
         b.classList.toggle('active', b.dataset.lmode === 'analyze'));
