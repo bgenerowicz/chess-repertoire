@@ -1210,9 +1210,4 @@ h3 {
   main.mobile-show-study #left-panel  { display: none; }
   main.mobile-show-study #right-panel { display: block; flex: 1; min-height: 300px; overflow-y: visible; padding-bottom: 60px; }
 
-  main.mobile-show-analysis #left-panel  { display: none; }
-  main.mobile-show-analysis #board-panel { display: none; }
-  main.mobile-show-analysis #right-panel { display: block; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 60px; }
-
-  #analysis-comment { font-size: 0.82rem; color: var(--text-dim); font-style: italic; margin: 4px 0 8px; }
 }
