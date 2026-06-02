@@ -385,7 +385,7 @@ function updateBoardDisplay() {
     indicator.textContent = `${moveNum}${isWhite ? '.' : '...'} ${san}`;
   }
 
-  // Book indicator (game analysis mode only)
+  // Book indicator
   const bookEl = document.getElementById('book-indicator');
   if (idx > 0 && state.navMode === 'game' && state.comparison) {
     const status = state.comparison[idx - 1]?.status;
@@ -399,6 +399,21 @@ function updateBoardDisplay() {
       bookEl.textContent = '–';
       bookEl.className = 'book-out';
     }
+  } else if (idx > 0 && state.navMode === 'study' && state.comparison) {
+    const status = state.comparison[idx - 1]?.status;
+    if (status === 'in-book') {
+      bookEl.textContent = '✓';
+      bookEl.className = 'book-in';
+    } else if (status === 'deviation') {
+      bookEl.textContent = '✗';
+      bookEl.className = 'book-dev';
+    } else {
+      bookEl.textContent = '';
+      bookEl.className = '';
+    }
+  } else if (idx > 0 && state.navMode === 'study') {
+    bookEl.textContent = '✓';
+    bookEl.className = 'book-in';
   } else {
     bookEl.textContent = '';
     bookEl.className = '';

@@ -534,6 +534,7 @@ h3 {
   font-weight: 700;
   min-width: 16px;
   text-align: center;
+  margin-left: -4px;
 }
 #book-indicator.book-in  { color: #4caf50; }
 #book-indicator.book-dev { color: var(--deviation); }
