@@ -534,6 +534,7 @@ h3 {
   font-weight: 700;
   min-width: 16px;
   text-align: center;
+  margin-left: -4px;
 }
 #book-indicator.book-in  { color: #4caf50; }
 #book-indicator.book-dev { color: var(--deviation); }
@@ -1131,6 +1132,7 @@ h3 {
 .plm-empty { color: var(--text-dim); text-align: center; padding: 20px 0; }
 
 /* ── Mobile layout ───────────────────── */
+#mobile-bottom-bar { display: none; }
 #mobile-panel-tabs { display: none; }
 
 @media (max-width: 768px) {
@@ -1166,6 +1168,7 @@ h3 {
   }
 
   #mobile-bottom-bar {
+    display: block;
     position: fixed;
     bottom: 0;
     left: 0;
