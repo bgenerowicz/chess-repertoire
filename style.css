@@ -1132,6 +1132,7 @@ h3 {
 .plm-empty { color: var(--text-dim); text-align: center; padding: 20px 0; }
 
 /* ── Mobile layout ───────────────────── */
+#mobile-bottom-bar { display: none; }
 #mobile-panel-tabs { display: none; }
 
 @media (max-width: 768px) {
@@ -1167,6 +1168,7 @@ h3 {
   }
 
   #mobile-bottom-bar {
+    display: block;
     position: fixed;
     bottom: 0;
     left: 0;
