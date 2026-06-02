@@ -2,15 +2,7 @@
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const COURSES = [
-  {
-    name: '1.e4 e5',
-    orientation: 'w',
-    builtin: false,
-    pgn: `[Event "Debug"]
-1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ 7. Nc3 Nxe4 8. O-O *`,
-  },
-];
+const COURSES = [];
 
 // ︎ (text variation selector) forces text rendering instead of colored emoji on iOS
 const PIECES = {
@@ -391,6 +383,25 @@ function updateBoardDisplay() {
       san = lines?.[state.studyLineIdx]?.moves[idx - 1]?.san || '';
     }
     indicator.textContent = `${moveNum}${isWhite ? '.' : '...'} ${san}`;
+  }
+
+  // Book indicator (game analysis mode only)
+  const bookEl = document.getElementById('book-indicator');
+  if (idx > 0 && state.navMode === 'game' && state.comparison) {
+    const status = state.comparison[idx - 1]?.status;
+    if (status === 'in-book') {
+      bookEl.textContent = '✓';
+      bookEl.className = 'book-in';
+    } else if (status === 'deviation') {
+      bookEl.textContent = '✗';
+      bookEl.className = 'book-dev';
+    } else {
+      bookEl.textContent = '–';
+      bookEl.className = 'book-out';
+    }
+  } else {
+    bookEl.textContent = '';
+    bookEl.className = '';
   }
 
   // Comment

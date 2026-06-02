@@ -529,6 +529,16 @@ h3 {
   font-family: monospace;
 }
 
+#book-indicator {
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-width: 16px;
+  text-align: center;
+}
+#book-indicator.book-in  { color: #4caf50; }
+#book-indicator.book-dev { color: var(--deviation); }
+#book-indicator.book-out { color: var(--text-dim); }
+
 #position-comment {
   max-width: 400px;
   font-size: 0.78rem;
