@@ -1236,6 +1236,12 @@ h3 {
   }
   #position-comment { height: auto; overflow-y: visible; }
 
+  #board-controls button {
+    width: 44px;
+    height: 44px;
+    font-size: 1rem;
+  }
+
   #right-panel {
     flex: 1;
     min-height: 0;
