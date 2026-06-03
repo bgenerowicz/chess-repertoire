@@ -517,6 +517,7 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
 }
 #board-controls button:hover { border-color: var(--accent); }
 #board-controls button:disabled { opacity: 0.3; cursor: default; }
