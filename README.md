@@ -9,7 +9,7 @@ A browser-based chess opening repertoire tool. Upload PGN files, study your line
 - **Game analysis** — paste a PGN game to see where you deviated from your repertoire
 - **Practice mode** — play your lines against the computer; select multiple courses to drill them together
 - **Persistent storage** — courses are saved in your browser's IndexedDB and restored on reload
-- **Fully local** — no server, no account, no data ever leaves your browser
+- **Local by default** — no server, no account; your courses are stored in your browser and never uploaded. The only outbound requests are the chess.js CDN script and, if you use it, the optional Lichess game import
 
 ## Usage
 
@@ -60,8 +60,9 @@ Pull requests are also welcome — please open an issue first to discuss larger 
 
 ## Tech stack
 
-Plain HTML, CSS, and vanilla JavaScript. No frameworks, no build tools, no dependencies.
-Chess logic uses a bundled copy of [chess.js](https://github.com/jhlywa/chess.js).
+Plain HTML, CSS, and vanilla JavaScript. No frameworks, no build tools.
+Chess logic uses [chess.js](https://github.com/jhlywa/chess.js), loaded from a CDN — the
+only runtime dependency, so the page needs network access on first load.
 
 ## License
 

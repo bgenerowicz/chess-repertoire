@@ -93,7 +93,7 @@ Lichess:
 - Results render as a clickable list (`#lichess-games`); picking one fills `#pgn-input` and runs `handleAnalyze()`
 - Non-standard variants are filtered out — a Chess960 or Crazyhouse PGN cannot be compared against a repertoire trie
 - The endpoint is strict: it allows roughly one request at a time and answers 429 otherwise. Aborting a response mid-stream can leave the block in place for a while, so don't hammer it while debugging
-- This is the only outbound call besides the chess.js CDN script. **The UI copy in `#info-modal` and the README still claim nothing ever leaves the browser, which is no longer strictly true** — worth fixing when touching that copy
+- This is the only outbound call besides the chess.js CDN script. `#info-modal` and the README both name it explicitly — keep that copy honest if the app gains another network call
 
 ## Layout
 
