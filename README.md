@@ -53,6 +53,16 @@ The logic (repertoire matching, explore mode, practice, board orientation, Liche
 ./tests/run.sh -v       # print every assertion
 ```
 
+## Development
+
+The version shown in the header (`v23`) is bumped automatically by a git hook whenever
+the app's source changes, so you can tell a fresh deploy from a cached page. Enable it
+once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Contributing
 
 Bug reports and feature suggestions are welcome via [GitHub Issues](https://github.com/bgenerowicz/chess-repertoire/issues).

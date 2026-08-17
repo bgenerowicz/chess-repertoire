@@ -123,6 +123,14 @@ Where a game leaves book, `#deviation-branches` shows the played continuation ne
 - Courses deleted from the UI are also removed from IndexedDB via `deleteUserCourse(course.dbId)`
 - The `DOMContentLoaded` handler `await`s `getUserCourses()` partway through, so **every listener registered after that line** (nav buttons, Analyze, flip, explore) attaches a tick later than the `load` event. Harmless for real users; automated clicks fired at `load` will miss
 
+## Version chip
+
+`#dbg-ver` in the header shows a version like `v23`. It exists so a deployed page can be told apart from a cached one — GitHub Pages takes a minute to redeploy and the assets have no cache-busting, so "did my change land?" is otherwise unanswerable.
+
+`.githooks/pre-commit` bumps it automatically on any commit that touches `index.html`, `app.js`, or `style.css`; docs-only commits leave it alone. Enabled with `git config core.hooksPath .githooks` (already set locally, needs re-running on a fresh clone). `git commit --no-verify` skips it.
+
+Don't hand-edit the number — let the hook own it, or it drifts again. It sat at `v21` through a dozen commits before the hook existed.
+
 ## Testing
 
 `tests/run.sh` runs every suite. Requires **Deno** (`node` is not installed here); no network, no other dependencies.

@@ -1,0 +1,36 @@
+#!/bin/sh
+# Bumps the version chip in index.html whenever the app itself changes, so a
+# freshly deployed page can be told apart from a cached one at a glance.
+#
+# Enabled with:  git config core.hooksPath .githooks
+# Skip once with: git commit --no-verify
+
+set -e
+
+# Only bump when the app actually changed — a docs-only commit shouldn't claim
+# a new version.
+if ! git diff --cached --name-only | grep -qE '^(index\.html|app\.js|style\.css)$'; then
+  exit 0
+fi
+
+repo_root=$(git rev-parse --show-toplevel)
+index="$repo_root/index.html"
+[ -f "$index" ] || exit 0
+
+current=$(sed -n 's/.*id="dbg-ver"[^>]*>v\([0-9][0-9]*\)<.*/\1/p' "$index" | head -1)
+if [ -z "$current" ]; then
+  echo "pre-commit: no version chip found in index.html, leaving it alone" >&2
+  exit 0
+fi
+
+next=$((current + 1))
+
+# BSD sed (macOS) needs an explicit empty suffix for -i; GNU sed does not.
+if sed --version >/dev/null 2>&1; then
+  sed -i "s/\(id=\"dbg-ver\"[^>]*>\)v$current</\1v$next</" "$index"
+else
+  sed -i '' "s/\(id=\"dbg-ver\"[^>]*>\)v$current</\1v$next</" "$index"
+fi
+
+git add "$index"
+echo "pre-commit: version v$current -> v$next"
