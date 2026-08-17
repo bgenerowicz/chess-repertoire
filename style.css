@@ -1484,6 +1484,12 @@ h3 {
   /* No nested scrolling on touch — the page scrolls as one */
   #move-list { max-height: none; overflow-y: visible; }
 
+  /* #study-annotation and #position-comment render the same comment. On desktop
+     they sit in different columns; here the study panel stacks directly under the
+     board, so the card would repeat the identical text a few hundred pixels away.
+     Keep the one next to the board — it's where every other mode shows it too. */
+  #study-annotation { display: none; }
+
   /* Controls span the board width and share it out between themselves, so the row
      scales with the screen instead of overflowing once buttons are added. */
   #board-controls {

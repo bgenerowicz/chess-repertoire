@@ -112,6 +112,7 @@ Where a game leaves book, `#deviation-branches` shows the played continuation ne
 - Below 768px `#mobile-panel-tabs` switches panels; `main` carries `mobile-show-left` / `mobile-show-right`
 - `mobile-show-right` (the "Game" tab) stacks **board + right panel** in one scrolling column, which is what makes the explore/analysis/study views reachable at all on mobile. `#right-panel` is `flex: none; overflow-y: visible` there so there is a single scrollbar, not a nested one
 - `#practice-view` is hidden in that stack — practice has its own mobile UI (`#mobile-practice-bar` under the board, move list in the Practice tab) and would otherwise appear twice
+- In study mode `#position-comment` (under the board) and `#study-annotation` (in the panel) render the **same** comment — `showStudyLine` feeds `navComments` from the same `move.comment`. Fine on desktop, where they're in different columns; on mobile the panel stacks under the board, so `#study-annotation` is hidden there. Anything that adds a third place for the comment needs the same treatment
 - `#board-controls` is capped to the board width on mobile with buttons at `flex: 1 1 0` plus a `max-width`, so the row divides the available width. **Adding another button scales the rest down instead of pushing them off-screen — don't give them fixed widths again**
 - `--sq-size` deliberately lets the board run edge-to-edge on mobile, with no allowance for `#board-panel`'s padding. That is not a bug: the board overflows into the padding without widening the page
 
