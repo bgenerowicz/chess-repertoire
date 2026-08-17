@@ -43,6 +43,16 @@ npx serve .
 python3 -m http.server
 ```
 
+## Tests
+
+The logic (repertoire matching, explore mode, practice, board orientation, Lichess parsing) has a test suite that runs without a browser or network. It needs [Deno](https://deno.land):
+
+```bash
+./tests/run.sh          # all suites
+./tests/run.sh explore  # only suites matching "explore"
+./tests/run.sh -v       # print every assertion
+```
+
 ## Contributing
 
 Bug reports and feature suggestions are welcome via [GitHub Issues](https://github.com/bgenerowicz/chess-repertoire/issues).
