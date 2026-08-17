@@ -471,7 +471,10 @@ function updateBoardDisplay() {
 
   if (state.navMode === 'game' && idx > 0) {
     const el = document.querySelector(`.move-token[data-idx="${idx - 1}"]`);
-    if (el) el.classList.add('current');
+    if (el) {
+      el.classList.add('current');
+      keepTokenVisible(el, document.getElementById('move-list'));
+    }
   } else if (state.navMode === 'study' && idx > 0) {
     const el = document.querySelector(`.study-move-token[data-idx="${idx - 1}"]`);
     if (el) el.classList.add('current');
@@ -482,6 +485,21 @@ function updateBoardDisplay() {
 }
 
 // ── UI – Analysis ─────────────────────────────────────────────────────────────
+
+// Centres a move token inside its own scroll container. A no-op on mobile, where
+// the list isn't scrollable, and when the element hasn't been laid out yet.
+// Measured with rects rather than offsetTop: the list is not a positioned
+// ancestor, so offsetTop is relative to the panel and would scroll to the wrong
+// place entirely.
+function keepTokenVisible(token, container) {
+  if (!token || !container || !container.clientHeight) return;
+  if (container.scrollHeight <= container.clientHeight) return;
+
+  const tokenRect = token.getBoundingClientRect();
+  const boxRect   = container.getBoundingClientRect();
+  const offset    = (tokenRect.top - boxRect.top) - (container.clientHeight - tokenRect.height) / 2;
+  container.scrollTop = Math.max(0, container.scrollTop + offset);
+}
 
 function renderAnalysis(comparison, lines) {
   state.analysisLines = lines; // remember for showStudyLine / updateStudyAnnotation
@@ -508,6 +526,7 @@ function renderAnalysis(comparison, lines) {
 
   // Render move tokens
   let moveNum = 0;
+  let devToken = null;
   for (let i = 0; i < comparison.length; i++) {
     const m = comparison[i];
     const isWhite = i % 2 === 0;
@@ -532,6 +551,7 @@ function renderAnalysis(comparison, lines) {
       updateBoardDisplay();
       updateContinueBar();
     });
+    if (m.status === 'deviation') devToken = token;
     moveListEl.appendChild(token);
   }
 
@@ -581,6 +601,9 @@ function renderAnalysis(comparison, lines) {
 
   // Show analysis panel
   showPanel('analysis');
+
+  // Only measurable once the panel is visible
+  keepTokenVisible(devToken, moveListEl);
 }
 
 // ── UI – Study ────────────────────────────────────────────────────────────────

@@ -88,4 +88,15 @@ const clean = app.compareToTrie(
 app.renderDeviationBranches(clean, lines);
 check('no deviation, no branch panel', getEl('deviation-branches').style.display, 'none');
 
+// ── Panel order ──
+// The deviation is the point of the analysis, so it must precede the full game
+// list — a long game would otherwise push it below the fold.
+const html = await Deno.readTextFile(new URL('../index.html', import.meta.url));
+const analysis = html.slice(html.indexOf('id="analysis-view"'), html.indexOf('id="study-view"'));
+const order = ['deviation-info', 'deviation-branches', 'full-game-section', 'matched-lines-section']
+  .map(id => analysis.indexOf(id));
+check('all analysis sections present', order.every(i => i >= 0), true);
+check('sections are ordered deviation → game → matched lines',
+  order.slice().sort((a, b) => a - b), order);
+
 report();

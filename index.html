@@ -142,10 +142,15 @@
 
       <div id="analysis-view" style="display:none">
         <h2>Game Analysis</h2>
-        <div id="move-list"></div>
+        <!-- Deviation first: it's the point of the analysis, and a long game
+             would otherwise push it far below the fold. -->
         <div id="deviation-info"></div>
         <div id="deviation-branches" style="display:none">
           <!-- your continuation vs the book's, rendered by renderDeviationBranches() -->
+        </div>
+        <div id="full-game-section">
+          <h3>Full game</h3>
+          <div id="move-list"></div>
         </div>
         <div id="matched-lines-section">
           <h3>Matching Repertoire Lines</h3>

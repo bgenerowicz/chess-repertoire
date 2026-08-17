@@ -85,6 +85,8 @@ Where a game leaves book, `#deviation-branches` shows the played continuation ne
 - Book branches are read off the course lines directly (`bookBranchesAt`), not via `getMatchedLines`, so they still appear when the game left book on move 1 — nothing "matched" in that case
 - One row per *distinct* book move at the deviation, so both alternatives show when the repertoire branches there
 - Clicking a played move drives the game nav in place; clicking a book move hands over to `showStudyLine(lineIdx, comparison, atMoveIdx)`, which lands on that exact move. "← Back to analysis" returns
+- **Panel order matters**: deviation banner and branches come *before* the full game list, otherwise a long game pushes them below the fold. `branches.test.js` asserts the ordering in `index.html`
+- `#move-list` is capped and scrolls on desktop so a long game can't push the sections below it away; mobile drops the cap (no nested scrolling on touch). `keepTokenVisible` keeps the deviation/current move in view inside it — it measures with `getBoundingClientRect`, not `offsetTop`, because the list is not a positioned ancestor and `offsetTop` would scroll to a wildly wrong place
 
 ## Explore mode
 

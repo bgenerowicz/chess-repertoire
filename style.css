@@ -790,12 +790,18 @@ h3 {
 }
 
 /* ── Move list (analysis) ────────────── */
+#full-game-section { margin-bottom: 12px; }
+
 #move-list {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
   align-items: baseline;
   font-size: 0.82rem;
+  /* A long game gets its own scroll rather than pushing the sections below it
+     off the panel. Mobile drops this — nested scrolling is bad on touch. */
+  max-height: 180px;
+  overflow-y: auto;
 }
 
 .move-num {
@@ -1475,6 +1481,8 @@ h3 {
     color: #fff;
   }
   #position-comment { height: auto; overflow-y: visible; }
+  /* No nested scrolling on touch — the page scrolls as one */
+  #move-list { max-height: none; overflow-y: visible; }
 
   /* Controls span the board width and share it out between themselves, so the row
      scales with the screen instead of overflowing once buttons are added. */
