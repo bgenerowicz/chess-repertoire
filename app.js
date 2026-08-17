@@ -18,13 +18,15 @@ const START_KEY = fenKey(START_FEN);
 const state = {
   courseData: [], // { lines, trie } per course index — grows as user adds courses
   activeCourse: 0,
+  courseMatch: null,   // { courseIdx, depth } when auto-detected, null when chosen manually
   // Board navigation
   navFens: [START_FEN],
   navFrom: [null],
   navTo:   [null],
   navComments: [null],
   navIdx: 0,
-  navMode: 'idle',  // 'idle' | 'game' | 'study' | 'practice'
+  boardFlipped: false,   // user override on top of the course/practice orientation
+  navMode: 'idle',  // 'idle' | 'game' | 'study' | 'practice' | 'explore'
   // Analysis
   uploadedMoves: null,
   comparison: null,
@@ -43,7 +45,14 @@ const state = {
   practiceInBook: true,
   practiceComparison: [],
   selectedSq: null,
-  legalDests: []
+  legalDests: [],
+  // Explore — free move-making on the board, matched against every loaded course
+  exploreActive: false,
+  exploreChess: null,
+  exploreMoves: [],       // [{ san, from, to, fen, inBook, comment, courses }]
+  exploreStartFen: START_FEN,
+  // Lichess import
+  lichessGames: []   // most recent games fetched for the entered username
 };
 
 // ── PGN Parsing ──────────────────────────────────────────────────────────────
@@ -265,13 +274,26 @@ function getMatchedLines(comparison, lines) {
 
 // ── Board Rendering ───────────────────────────────────────────────────────────
 
+// Which colour sits at the bottom: the course/practice colour, flipped if the user asked
+function boardOrientation() {
+  const base = state.navMode === 'practice'
+    ? state.practiceColor
+    : (COURSES[state.activeCourse]?.orientation ?? 'w');
+  return state.boardFlipped ? (base === 'w' ? 'b' : 'w') : base;
+}
+
 function renderBoard(fen, lastFrom, lastTo) {
   const board = document.getElementById('chessboard');
   board.innerHTML = '';
 
-  const orientation = state.navMode === 'practice' ? state.practiceColor
-    : (COURSES[state.activeCourse]?.orientation ?? 'w');
+  const orientation = boardOrientation();
   const ranks = fen.split(' ')[0].split('/');  // rank 8 → rank 1
+  const sideToMove = fen.split(' ')[1] || 'w';
+
+  // Practice restricts moves to the player's colour. Everywhere else the board is
+  // a free exploration surface where either side can be moved.
+  const practiceInteractive = state.practiceActive && state.practiceInBook;
+  const exploreInteractive  = !state.practiceActive;
 
   for (let displayRow = 0; displayRow < 8; displayRow++) {
     const rankIdx = orientation === 'w' ? displayRow : 7 - displayRow;
@@ -302,16 +324,24 @@ function renderBoard(fen, lastFrom, lastTo) {
       // Square name attribute used by drag logic
       sq.dataset.sq = sqName;
 
-      // Practice mode overlays
-      if (state.practiceActive && state.practiceInBook) {
-        const isPlayerTurn = state.practiceChess && state.practiceChess.turn() === state.practiceColor;
+      // Interactive overlays — practice moves, or free exploration elsewhere
+      if (practiceInteractive || exploreInteractive) {
+        const isPlayerTurn = practiceInteractive
+          ? (state.practiceChess && state.practiceChess.turn() === state.practiceColor)
+          : true;
         if (sqName === state.selectedSq) {
           sq.classList.add('sq-selected');
         } else if (state.legalDests.includes(sqName)) {
           if (piece) sq.classList.add('sq-legal-capture');
           else       sq.classList.add('sq-legal');
         }
-        if (isPlayerTurn) sq.classList.add('sq-interactive');
+
+        // In explore, only the side to move (and its legal targets) invite a click
+        const pieceMovable = piece && (piece === piece.toUpperCase() ? 'w' : 'b') === sideToMove;
+        const inviting = practiceInteractive
+          ? isPlayerTurn
+          : (pieceMovable || state.legalDests.includes(sqName));
+        if (inviting) sq.classList.add('sq-interactive');
 
         const _sq = sqName;
         const _pieceChar = piece;
@@ -381,6 +411,8 @@ function updateBoardDisplay() {
     } else if (state.navMode === 'study' && state.studyLineIdx !== null) {
       const lines = state.analysisLines ?? state.courseData[state.activeCourse]?.lines;
       san = lines?.[state.studyLineIdx]?.moves[idx - 1]?.san || '';
+    } else if (state.navMode === 'explore') {
+      san = state.exploreMoves[idx - 1]?.san || '';
     }
     indicator.textContent = `${moveNum}${isWhite ? '.' : '...'} ${san}`;
   }
@@ -414,6 +446,10 @@ function updateBoardDisplay() {
   } else if (idx > 0 && state.navMode === 'study') {
     bookEl.textContent = '✓';
     bookEl.className = 'book-in';
+  } else if (idx > 0 && state.navMode === 'explore') {
+    const inBook = state.exploreMoves[idx - 1]?.inBook;
+    bookEl.textContent = inBook ? '✓' : '✗';
+    bookEl.className   = inBook ? 'book-in' : 'book-dev';
   } else {
     bookEl.textContent = '';
     bookEl.className = '';
@@ -430,7 +466,7 @@ function updateBoardDisplay() {
   document.getElementById('end-btn').disabled   = idx >= total;
 
   // Highlight current move in move list
-  document.querySelectorAll('.move-token.current, .study-move-token.current')
+  document.querySelectorAll('.move-token.current, .study-move-token.current, .explore-move.current')
     .forEach(el => el.classList.remove('current'));
 
   if (state.navMode === 'game' && idx > 0) {
@@ -440,6 +476,9 @@ function updateBoardDisplay() {
     const el = document.querySelector(`.study-move-token[data-idx="${idx - 1}"]`);
     if (el) el.classList.add('current');
   }
+
+  // Explore panel tracks whatever position the nav buttons land on
+  if (state.navMode === 'explore') updateExplorePanel();
 }
 
 // ── UI – Analysis ─────────────────────────────────────────────────────────────
@@ -545,6 +584,7 @@ function renderAnalysis(comparison, lines) {
 // ── UI – Study ────────────────────────────────────────────────────────────────
 
 function showStudyLine(lineIdx, comparison) {
+  resetExplore();
   const lines = state.analysisLines ?? state.courseData[state.activeCourse]?.lines ?? [];
   const line = lines[lineIdx];
   if (!line) return;
@@ -635,6 +675,7 @@ function showPanel(which) {
   document.getElementById('analysis-view').style.display  = which === 'analysis' ? '' : 'none';
   document.getElementById('study-view').style.display     = which === 'study'    ? '' : 'none';
   document.getElementById('practice-view').style.display  = which === 'practice' ? '' : 'none';
+  document.getElementById('explore-view').style.display   = which === 'explore'  ? '' : 'none';
 }
 
 // ── Course loading ────────────────────────────────────────────────────────────
@@ -674,17 +715,30 @@ async function loadCourse(courseIdx) {
 // ── Event handlers ────────────────────────────────────────────────────────────
 
 function handleAnalyze() {
+  resetExplore();
   const pgn = document.getElementById('pgn-input').value.trim();
   const errorEl = document.getElementById('upload-error');
   errorEl.textContent = '';
 
   if (!pgn) { errorEl.textContent = 'Please paste a PGN game.'; return; }
 
-  const courseData = state.courseData[state.activeCourse];
-  if (!courseData) { errorEl.textContent = 'Course is still loading, please wait.'; return; }
-
   const { headers, moves } = parseGame(pgn);
   if (moves.length === 0) { errorEl.textContent = 'No moves found in PGN. Check the format.'; return; }
+
+  // Every course has to be parsed before we can tell which one this game follows
+  const missing = COURSES.map((_, i) => i).filter(i => !state.courseData[i]);
+  if (missing.length > 0) {
+    errorEl.textContent = 'Courses are still loading, please wait…';
+    Promise.all(missing.map(i => loadCourse(i))).then(handleAnalyze);
+    return;
+  }
+
+  // Pick the repertoire this game follows furthest rather than whatever was last used
+  const best = pickBestCourse(moves);
+  if (best) applyActiveCourse(best.courseIdx, best);
+
+  const courseData = state.courseData[state.activeCourse];
+  if (!courseData) { errorEl.textContent = 'Course is still loading, please wait.'; return; }
 
   state.uploadedMoves = moves;
   const comparison = compareToTrie(moves, courseData.trie);
@@ -705,12 +759,8 @@ function handleAnalyze() {
 }
 
 function handleTabClick(courseIdx) {
-  state.activeCourse = courseIdx;
-  renderCourseTabs(); // updates active highlight
-
-  // Sync practice color to the new course orientation
-  state.practiceColor = COURSES[courseIdx].orientation;
-  updatePracticeColorDisplay();
+  resetExplore();
+  applyActiveCourse(courseIdx);   // manual pick — clears any auto-detected match
 
   // Reload if we already had a game analyzed
   if (state.uploadedMoves) {
@@ -726,43 +776,75 @@ function handleTabClick(courseIdx) {
   renderBoard(START_FEN, null, null);
 }
 
-function renderCourseTabs() {
-  const container = document.getElementById('course-tabs');
-  container.innerHTML = '';
+// How far does this game follow each loaded course? Returns the deepest match, or
+// null when nothing is loaded. Ties keep the earliest course.
+function pickBestCourse(moves) {
+  let best = null;
+  state.courseData.forEach((data, courseIdx) => {
+    if (!data) return;
+    const comparison = compareToTrie(moves, data.trie);
+    let depth = 0;
+    for (const move of comparison) {
+      if (move.status !== 'in-book') break;
+      depth++;
+    }
+    if (!best || depth > best.depth) best = { courseIdx, depth };
+  });
+  return best;
+}
+
+// Single place that switches repertoire, whether auto-detected or picked by hand
+function applyActiveCourse(courseIdx, match = null) {
+  state.activeCourse = courseIdx;
+  state.courseMatch  = match;
+  state.practiceColor = COURSES[courseIdx]?.orientation ?? state.practiceColor;
+  updatePracticeColorDisplay();
+  renderActiveCourse();
+}
+
+// Passive header chip — names the repertoire in play and how it was chosen.
+// Switching is done from the Courses tab, not here.
+function renderActiveCourse() {
+  const el = document.getElementById('active-course');
+  if (!el) return;
+  el.innerHTML = '';
+
+  const statusEl = document.getElementById('header-status');
 
   if (COURSES.length === 0) {
-    const hint = document.createElement('span');
-    hint.style.cssText = 'font-size:0.78rem;color:var(--text-muted);padding:6px 4px;';
-    hint.textContent = 'No courses — click + to add one';
-    container.appendChild(hint);
-    const statusEl = document.getElementById('header-status');
+    el.className = 'ac-empty';
+    el.textContent = 'No courses — click + to add one';
     if (statusEl) { statusEl.textContent = 'No courses loaded'; statusEl.className = ''; }
     return;
   }
 
-  COURSES.forEach((course, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn' + (i === state.activeCourse ? ' active' : '');
-    btn.dataset.course = i;
-    btn.addEventListener('click', () => handleTabClick(i));
+  const course = COURSES[state.activeCourse];
+  if (!course) return;
+  const match = state.courseMatch;
 
-    const label = document.createTextNode(course.name);
-    btn.appendChild(label);
+  el.className = 'ac-chip' + (match && match.depth > 0 ? ' ac-matched' : '');
 
-    if (!course.builtin) {
-      const del = document.createElement('button');
-      del.className = 'tab-delete';
-      del.title = 'Remove course';
-      del.textContent = '×';
-      del.addEventListener('click', e => {
-        e.stopPropagation();
-        removeUserCourse(i);
-      });
-      btn.appendChild(del);
-    }
+  const icon = document.createElement('span');
+  icon.className = 'ac-icon';
+  icon.textContent = match && match.depth > 0 ? '✓' : (course.orientation === 'w' ? '♔' : '♚');
 
-    container.appendChild(btn);
-  });
+  const name = document.createElement('span');
+  name.className = 'ac-name';
+  name.textContent = course.name;
+
+  el.appendChild(icon);
+  el.appendChild(name);
+
+  if (match) {
+    const note = document.createElement('span');
+    note.className = 'ac-note';
+    note.textContent = match.depth > 0
+      ? `${match.depth} move${match.depth !== 1 ? 's' : ''} matched`
+      : 'no repertoire matched';
+    el.appendChild(note);
+  }
+
+  if (statusEl) { statusEl.textContent = ''; statusEl.className = ''; }
 }
 
 function addUserCourse(name, orientation, pgn, dbId) {
@@ -812,6 +894,19 @@ function renderCoursesBrowser() {
     const orientLabel = course.orientation === 'w' ? '♔' : '♚';
     meta.textContent = orientLabel;
 
+    // Manual override for when auto-detection picks the wrong repertoire
+    const isActive = courseIdx === state.activeCourse;
+    const useBtn = document.createElement('button');
+    useBtn.className = 'course-card-use' + (isActive ? ' active' : '');
+    useBtn.title = isActive ? 'Active repertoire' : 'Use this repertoire';
+    useBtn.textContent = '✓';
+    useBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (isActive) return;
+      handleTabClick(courseIdx);
+      renderCoursesBrowser();
+    });
+
     const delBtn = document.createElement('button');
     delBtn.className = 'course-card-delete';
     delBtn.title = 'Remove course';
@@ -824,6 +919,7 @@ function renderCoursesBrowser() {
     header.appendChild(arrow);
     header.appendChild(nameEl);
     header.appendChild(meta);
+    header.appendChild(useBtn);
     header.appendChild(delBtn);
 
     // ── Lines list (hidden until expanded) ──────────────
@@ -949,9 +1045,319 @@ async function removeUserCourse(courseIdx) {
   // Re-index any selected courses above the removed one
   const updated = new Set([...state.practiceSelectedCourses].map(i => i > courseIdx ? i - 1 : i));
   state.practiceSelectedCourses = updated;
-  renderCourseTabs();
+  renderActiveCourse();
   renderPracticeCourseList();
   handleTabClick(state.activeCourse);
+}
+
+// ── Explore Mode ──────────────────────────────────────────────────────────────
+// Free move-making on the main board. Every position is looked up in all loaded
+// courses at once — the trie is keyed by position, so this works from any
+// starting point, including a position reached mid-study or mid-analysis.
+
+// san → { comment, courses: [courseIdx] }, unioned across every loaded course
+function bookContinuations(key) {
+  const out = new Map();
+  state.courseData.forEach((data, courseIdx) => {
+    const node = data?.trie?.get(key);
+    if (!node) return;
+    for (const [san, entry] of node) {
+      if (!out.has(san)) out.set(san, { comment: null, courses: [] });
+      const rec = out.get(san);
+      if (!rec.comment && entry.comment) rec.comment = entry.comment;
+      if (!rec.courses.includes(courseIdx)) rec.courses.push(courseIdx);
+    }
+  });
+  return out;
+}
+
+// Course indices whose repertoire contains this exact position
+function coursesWithPosition(key) {
+  const found = [];
+  state.courseData.forEach((data, courseIdx) => {
+    if (data?.trie?.has(key)) found.push(courseIdx);
+  });
+  return found;
+}
+
+function startExplore(fen) {
+  state.exploreActive   = true;
+  state.exploreChess    = new Chess(fen);
+  state.exploreMoves    = [];
+  state.exploreStartFen = fen;
+  state.navMode         = 'explore';
+  state.selectedSq      = null;
+  state.legalDests      = [];
+
+  setNavState([fen], [null], [null], [null], 0);
+  showPanel('explore');
+  updateExplorePanel();
+
+  // Courses load lazily; explore needs all of them to match against
+  const missing = COURSES.map((_, i) => i).filter(i => !state.courseData[i]);
+  if (missing.length > 0) {
+    Promise.all(missing.map(i => loadCourse(i))).then(() => {
+      if (state.exploreActive) updateExplorePanel();
+    });
+  }
+}
+
+// Returns the chess object accepting moves, starting or rewinding a session as needed.
+function ensureExploreSession() {
+  if (!state.exploreActive) {
+    startExplore(state.navFens[state.navIdx] ?? START_FEN);
+  } else if (state.navIdx !== state.exploreMoves.length) {
+    // User navigated back and is now branching — drop everything after this point
+    state.exploreMoves = state.exploreMoves.slice(0, state.navIdx);
+    state.navFens      = state.navFens.slice(0, state.navIdx + 1);
+    state.navFrom      = state.navFrom.slice(0, state.navIdx + 1);
+    state.navTo        = state.navTo.slice(0, state.navIdx + 1);
+    state.navComments  = state.navComments.slice(0, state.navIdx + 1);
+    state.exploreChess = new Chess(state.navFens[state.navIdx]);
+  }
+  return state.exploreChess;
+}
+
+function exploreMove(from, to) {
+  const chess     = ensureExploreSession();
+  const keyBefore = fenKey(chess.fen());
+  const result    = chess.move({ from, to, promotion: 'q' });
+  if (!result) return;
+
+  state.selectedSq = null;
+  state.legalDests = [];
+
+  const book = bookContinuations(keyBefore).get(result.san);
+  const fen  = chess.fen();
+
+  state.exploreMoves.push({
+    san:     result.san,
+    from:    result.from,
+    to:      result.to,
+    fen,
+    inBook:  !!book,
+    comment: book?.comment ?? null,
+    courses: book?.courses ?? []
+  });
+
+  state.navFens     = [...state.navFens,     fen];
+  state.navFrom     = [...state.navFrom,     result.from];
+  state.navTo       = [...state.navTo,       result.to];
+  state.navComments = [...state.navComments, book?.comment ?? null];
+  state.navIdx      = state.navFens.length - 1;
+
+  updateBoardDisplay();   // refreshes the explore panel too
+}
+
+function handleExploreClick(sqName) {
+  const chess = ensureExploreSession();
+  const piece = chess.get(sqName);
+
+  if (state.selectedSq === sqName) { clearExploreSelection(); return; }
+
+  if (state.selectedSq && state.legalDests.includes(sqName)) {
+    exploreMove(state.selectedSq, sqName);
+    return;
+  }
+
+  if (piece && piece.color === chess.turn()) {
+    state.selectedSq = sqName;
+    state.legalDests = chess.moves({ square: sqName, verbose: true }).map(m => m.to);
+    renderExploreBoard();
+    return;
+  }
+
+  clearExploreSelection();
+}
+
+function clearExploreSelection() {
+  state.selectedSq = null;
+  state.legalDests = [];
+  if (state.exploreActive) renderExploreBoard();
+}
+
+function renderExploreBoard() {
+  const last = state.exploreMoves[state.navIdx - 1];
+  renderBoard(state.exploreChess.fen(), last?.from ?? null, last?.to ?? null);
+}
+
+function resetExplore() {
+  state.exploreActive = false;
+  state.exploreChess  = null;
+  state.exploreMoves  = [];
+  state.selectedSq    = null;
+  state.legalDests    = [];
+  if (state.navMode === 'explore') state.navMode = 'idle';
+}
+
+function updateExplorePanel() {
+  if (!state.exploreActive) return;
+
+  const fen  = state.navFens[state.navIdx];
+  const key  = fenKey(fen);
+  const book = bookContinuations(key);
+  const here = coursesWithPosition(key);
+
+  // A position only appears as a trie key when it has continuations, so the last
+  // move of a line isn't found there — but the move that reached it was in book.
+  const lastMove     = state.exploreMoves[state.navIdx - 1];
+  const inRepertoire = here.length > 0 || !!lastMove?.inBook;
+  const courseIdxs   = here.length > 0 ? here : (lastMove?.courses ?? []);
+  const names        = courseIdxs.map(i => COURSES[i]?.name).filter(Boolean).join(', ');
+
+  // Status line
+  const statusEl = document.getElementById('explore-status');
+  if (COURSES.length === 0) {
+    statusEl.textContent = 'No courses loaded — add one to match your moves against it.';
+    statusEl.className   = 'explore-status-out';
+  } else if (book.size > 0) {
+    statusEl.textContent = `In your repertoire${names ? ` — ${names}` : ''}`;
+    statusEl.className   = 'explore-status-in';
+  } else if (inRepertoire) {
+    statusEl.textContent = `End of your repertoire${names ? ` — ${names}` : ''}`;
+    statusEl.className   = 'explore-status-end';
+  } else {
+    statusEl.textContent = 'Out of book';
+    statusEl.className   = 'explore-status-out';
+  }
+
+  renderExploreMoveList();
+
+  // Book continuations from the current position
+  const contEl = document.getElementById('explore-continuations');
+  contEl.innerHTML = '';
+  for (const [san, { comment, courses }] of book) {
+    const btn = document.createElement('button');
+    btn.className = 'explore-cont';
+    btn.innerHTML = `<span class="ec-san">${escHtml(san)}</span>` +
+      (courses.length > 1 ? `<span class="ec-count">${courses.length} courses</span>` : '');
+    if (comment) btn.title = comment;
+    btn.addEventListener('click', () => playExploreSan(san));
+    contEl.appendChild(btn);
+  }
+
+  document.getElementById('explore-cont-label').style.display = book.size > 0 ? '' : 'none';
+}
+
+function playExploreSan(san) {
+  const chess = ensureExploreSession();
+  const legal = chess.moves({ verbose: true }).find(m => m.san === san);
+  if (legal) exploreMove(legal.from, legal.to);
+}
+
+function renderExploreMoveList() {
+  const listEl = document.getElementById('explore-moves');
+  listEl.innerHTML = '';
+
+  state.exploreMoves.forEach((move, i) => {
+    if (i % 2 === 0) {
+      const num = document.createElement('span');
+      num.className = 'explore-move-num';
+      num.textContent = `${Math.floor(i / 2) + 1}.`;
+      listEl.appendChild(num);
+    }
+    const token = document.createElement('span');
+    token.className = `explore-move ${move.inBook ? 'in-book' : 'off-book'}`;
+    token.textContent = move.san;
+    token.dataset.idx = i;
+    if (i === state.navIdx - 1) token.classList.add('current');
+    if (move.comment) token.title = move.comment;
+    token.addEventListener('click', () => {
+      state.navIdx = i + 1;
+      updateBoardDisplay();
+      updateExplorePanel();
+    });
+    listEl.appendChild(token);
+  });
+}
+
+// ── Lichess import ────────────────────────────────────────────────────────────
+
+const LICHESS_MAX_GAMES = 15;
+
+// Fetches the user's most recent standard games as ndjson, PGN included per game.
+async function fetchLichessGames(username) {
+  const url = `https://lichess.org/api/games/user/${encodeURIComponent(username)}`
+            + `?max=${LICHESS_MAX_GAMES}&sort=dateDesc&pgnInJson=true&opening=true`;
+  const res = await fetch(url, { headers: { Accept: 'application/x-ndjson' } });
+
+  if (res.status === 404) throw new Error('User not found.');
+  if (res.status === 429) throw new Error('Too many requests — wait a moment and try again.');
+  if (!res.ok) throw new Error(`Lichess returned ${res.status}.`);
+
+  const text = (await res.text()).trim();
+  if (!text) throw new Error('No games found for this user.');
+
+  return text.split('\n')
+    .filter(line => line.trim())
+    .map(line => JSON.parse(line))
+    .filter(game => game.variant === 'standard' && game.pgn);
+}
+
+// 'white' | 'black' | null — null when the name doesn't match either side
+function lichessPlayerColor(game, username) {
+  const name = username.toLowerCase();
+  if (game.players?.white?.user?.name?.toLowerCase() === name) return 'white';
+  if (game.players?.black?.user?.name?.toLowerCase() === name) return 'black';
+  return null;
+}
+
+function lichessOpponentName(game, color) {
+  const opp = game.players?.[color === 'white' ? 'black' : 'white'];
+  if (!opp) return 'Unknown';
+  if (opp.aiLevel) return `Stockfish level ${opp.aiLevel}`;
+  return opp.user?.name ?? 'Anonymous';
+}
+
+function lichessResult(game, color) {
+  if (!game.winner) return { text: '½', cls: 'lg-draw' };
+  if (!color)       return { text: game.winner === 'white' ? '1-0' : '0-1', cls: 'lg-draw' };
+  return game.winner === color
+    ? { text: 'W', cls: 'lg-win' }
+    : { text: 'L', cls: 'lg-loss' };
+}
+
+function renderLichessGames(games, username) {
+  const container = document.getElementById('lichess-games');
+  container.innerHTML = '';
+  state.lichessGames = games;
+
+  if (games.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'lg-empty';
+    empty.textContent = 'No standard games found for this user.';
+    container.appendChild(empty);
+    return;
+  }
+
+  games.forEach((game, i) => {
+    const color   = lichessPlayerColor(game, username);
+    const result  = lichessResult(game, color);
+    const date    = new Date(game.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    const opening = game.opening?.name ?? '';
+
+    const row = document.createElement('button');
+    row.className = 'lg-row';
+    row.innerHTML =
+      `<span class="lg-result ${result.cls}">${result.text}</span>` +
+      `<span class="lg-body">` +
+        `<span class="lg-opp">${color === 'black' ? '♟' : '♙'} ${escHtml(lichessOpponentName(game, color))}</span>` +
+        `<span class="lg-meta">${escHtml(game.speed ?? '')} · ${date}${opening ? ' · ' + escHtml(opening) : ''}</span>` +
+      `</span>`;
+    row.addEventListener('click', () => selectLichessGame(i));
+    container.appendChild(row);
+  });
+}
+
+function selectLichessGame(idx) {
+  const game = state.lichessGames[idx];
+  if (!game) return;
+
+  document.getElementById('pgn-input').value = game.pgn;
+  document.querySelectorAll('#lichess-games .lg-row')
+    .forEach((el, i) => el.classList.toggle('selected', i === idx));
+
+  handleAnalyze();
 }
 
 // ── Utility ───────────────────────────────────────────────────────────────────
@@ -973,7 +1379,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.warn('IndexedDB unavailable:', e);
   }
 
-  renderCourseTabs();
+  renderActiveCourse();
   renderPracticeCourseList();
   renderBoard(START_FEN, null, null);
 
@@ -995,7 +1401,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Lichess import
   const lichessUsernameEl = document.getElementById('lichess-username');
   lichessUsernameEl.value = localStorage.getItem('lichessUsername') || '';
-  document.getElementById('lichess-import-btn').addEventListener('click', async () => {
+  const importLichessGames = async () => {
     const username = lichessUsernameEl.value.trim();
     const errorEl  = document.getElementById('lichess-error');
     const btn      = document.getElementById('lichess-import-btn');
@@ -1005,21 +1411,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.disabled = true;
     btn.textContent = 'Loading…';
     try {
-      const res = await fetch(
-        `https://lichess.org/api/games/user/${encodeURIComponent(username)}?max=1`,
-        { headers: { Accept: 'application/x-chess-pgn' } }
-      );
-      if (res.status === 404) throw new Error('User not found.');
-      if (!res.ok) throw new Error(`Lichess returned ${res.status}.`);
-      const pgn = (await res.text()).trim();
-      if (!pgn) throw new Error('No games found for this user.');
-      document.getElementById('pgn-input').value = pgn;
+      renderLichessGames(await fetchLichessGames(username), username);
     } catch (err) {
+      document.getElementById('lichess-games').innerHTML = '';
+      state.lichessGames = [];
       errorEl.textContent = err.message;
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Import last game';
+      btn.textContent = 'Import games';
     }
+  };
+  document.getElementById('lichess-import-btn').addEventListener('click', importLichessGames);
+  lichessUsernameEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') importLichessGames();
+  });
+
+  // Explore
+  document.getElementById('explore-reset-btn').addEventListener('click', () => startExplore(START_FEN));
+
+  // Flip board — navIdx tracks the displayed position in every mode, so a plain
+  // redraw is enough; selection and legal-move hints survive it.
+  document.getElementById('flip-btn').addEventListener('click', () => {
+    state.boardFlipped = !state.boardFlipped;
+    document.getElementById('flip-btn').classList.toggle('flipped', state.boardFlipped);
+    updateBoardDisplay();
   });
 
   // Info modal
@@ -1230,7 +1645,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const dbId = await saveUserCourse(name, ucColor, pgn);
       addUserCourse(name, ucColor, pgn, dbId);
-      renderCourseTabs();
+      renderActiveCourse();
 
       const newIdx = COURSES.length - 1;
       handleTabClick(newIdx);
@@ -1257,6 +1672,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ── Practice Mode ─────────────────────────────────────────────────────────────
 
 function startPractice() {
+  resetExplore();
   const selected = [...state.practiceSelectedCourses];
   if (selected.length === 0) {
     setPracticeMsg('Select at least one course above.', false);
@@ -1333,7 +1749,8 @@ function resetPractice() {
 }
 
 function handleBoardClick(sqName) {
-  if (!state.practiceActive || !state.practiceInBook) return;
+  if (!state.practiceActive) { handleExploreClick(sqName); return; }
+  if (!state.practiceInBook) return;
   const chess = state.practiceChess;
   if (chess.turn() !== state.practiceColor) return;
 
@@ -1831,9 +2248,7 @@ function getSquareAtPoint(clientX, clientY) {
   if (clientX < bbox.left || clientX > bbox.right ||
       clientY < bbox.top  || clientY > bbox.bottom) return null;
 
-  const orientation = state.navMode === 'practice'
-    ? state.practiceColor
-    : COURSES[state.activeCourse].orientation;
+  const orientation = boardOrientation();
   const sqSize = bbox.width / 8;
   const col = Math.max(0, Math.min(7, Math.floor((clientX - bbox.left) / sqSize)));
   const row = Math.max(0, Math.min(7, Math.floor((clientY - bbox.top)  / sqSize)));
@@ -1845,11 +2260,15 @@ function getSquareAtPoint(clientX, clientY) {
 
 function startPieceDrag(clientX, clientY, sqName, pieceChar) {
   if (!pieceChar) return;
-  // Only allow dragging the player's own pieces
-  const isOwnPiece = state.practiceChess &&
-    state.practiceChess.turn() === state.practiceColor &&
-    ((state.practiceColor === 'w') === (pieceChar === pieceChar.toUpperCase()));
-  if (!isOwnPiece) return;
+
+  // In practice only the player's own pieces move; in explore either side may.
+  const chess = state.practiceActive ? state.practiceChess : ensureExploreSession();
+  if (!chess) return;
+  const pieceColor = pieceChar === pieceChar.toUpperCase() ? 'w' : 'b';
+  const movable = state.practiceActive
+    ? (chess.turn() === state.practiceColor && pieceColor === state.practiceColor)
+    : pieceColor === chess.turn();
+  if (!movable) return;
 
   drag.active    = true;
   drag.startSq   = sqName;
@@ -1861,9 +2280,10 @@ function startPieceDrag(clientX, clientY, sqName, pieceChar) {
 
   // Select the piece (shows legal hints)
   state.selectedSq = sqName;
-  const moves = state.practiceChess.moves({ square: sqName, verbose: true });
+  const moves = chess.moves({ square: sqName, verbose: true });
   state.legalDests = moves.map(m => m.to);
-  renderBoard(state.practiceChess.fen(), lastPracticeFrom(), lastPracticeTo());
+  if (state.practiceActive) renderBoard(chess.fen(), lastPracticeFrom(), lastPracticeTo());
+  else                      renderExploreBoard();
 
   // Ghost element
   const ghost = document.createElement('div');
@@ -1934,9 +2354,12 @@ function endDrag(clientX, clientY) {
   drag.suppressClick = true;
 
   if (targetSq && targetSq !== startSq && state.legalDests.includes(targetSq)) {
-    submitUserMove(startSq, targetSq);
-  } else {
+    if (state.practiceActive) submitUserMove(startSq, targetSq);
+    else                      exploreMove(startSq, targetSq);
+  } else if (state.practiceActive) {
     clearPracticeSelection();
+  } else {
+    clearExploreSelection();
   }
 }
 
@@ -1999,6 +2422,7 @@ function initDragListeners() {
     if (!drag.active) return;
     if (drag.ghost) { drag.ghost.remove(); drag.ghost = null; }
     drag.active = false;
-    clearPracticeSelection();
+    if (state.practiceActive) clearPracticeSelection();
+    else                      clearExploreSelection();
   });
 }

@@ -49,36 +49,46 @@ h1 {
   white-space: nowrap;
 }
 
-#course-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-
-.tab-btn {
-  padding: 5px 12px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  transition: all 0.15s;
-  white-space: nowrap;
+/* Passive chip naming the repertoire in play — switching happens in the Courses tab */
+#active-course {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  min-width: 0;
 }
-.tab-btn:hover { border-color: var(--accent); color: var(--text); }
-.tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
-.tab-delete {
-  font-size: 0.75rem;
-  opacity: 0.7;
-  padding: 0 2px;
-  line-height: 1;
-  background: none;
-  border: none;
-  color: inherit;
-  cursor: pointer;
+#active-course.ac-empty {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: 6px 4px;
 }
-.tab-delete:hover { opacity: 1; }
+
+#active-course.ac-chip {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+#active-course.ac-matched {
+  border-color: var(--in-book);
+  color: var(--text);
+}
+
+.ac-icon { flex-shrink: 0; }
+#active-course.ac-matched .ac-icon { color: var(--in-book); }
+.ac-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ac-note {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+.ac-note::before { content: "· "; }
 
 /* ── Add-course button ───────────────── */
 #add-course-btn {
@@ -424,6 +434,148 @@ h3 {
   min-height: 0;
 }
 
+/* ── Explore view ────────────────────── */
+#explore-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#explore-status {
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border-left: 3px solid var(--text-muted);
+  background: var(--card);
+}
+#explore-status.explore-status-in  { border-left-color: var(--in-book);  color: var(--in-book); }
+#explore-status.explore-status-end { border-left-color: var(--text-dim); color: var(--text-dim); }
+#explore-status.explore-status-out { border-left-color: var(--deviation); color: var(--deviation); }
+
+#explore-moves {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 5px;
+  font-size: 0.85rem;
+  line-height: 1.8;
+}
+.explore-move-num { color: var(--text-muted); font-size: 0.78rem; }
+.explore-move {
+  padding: 1px 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.explore-move.in-book  { color: var(--in-book); }
+.explore-move.off-book { color: var(--deviation); }
+.explore-move:hover    { background: var(--card-hover); }
+.explore-move.current  { background: var(--accent-dim); outline: 1px solid var(--accent); }
+
+#explore-cont-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+#explore-continuations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.explore-cont {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 9px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.explore-cont:hover { background: var(--card-hover); border-color: var(--in-book); }
+.ec-san   { font-weight: 600; }
+.ec-count { color: var(--text-muted); font-size: 0.7rem; }
+
+#explore-reset-btn {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 6px 12px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+#explore-reset-btn:hover { background: var(--card); color: var(--text); }
+
+#lichess-games {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+#lichess-games:empty { display: none; }
+
+.lg-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.lg-row:hover { background: var(--card-hover); }
+.lg-row.selected { border-color: var(--accent); }
+
+.lg-result {
+  flex-shrink: 0;
+  width: 24px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-align: center;
+}
+.lg-win  { color: var(--in-book); }
+.lg-loss { color: var(--deviation); }
+.lg-draw { color: var(--text-dim); }
+
+.lg-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.lg-opp {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lg-meta {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lg-empty {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
 #upload-hint {
   font-size: 0.75rem;
   color: var(--text-muted);
@@ -521,6 +673,13 @@ h3 {
 }
 #board-controls button:hover { border-color: var(--accent); }
 #board-controls button:disabled { opacity: 0.3; cursor: default; }
+
+/* Flip sits slightly apart from the move-navigation cluster */
+#flip-btn { margin-left: 4px; }
+#flip-btn.flipped {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 
 #move-indicator {
   color: var(--text-dim);
@@ -781,6 +940,24 @@ h3 {
   font-size: 0.7rem;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+.course-card-use {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+.course-card-use:hover { color: var(--in-book); opacity: 1; }
+.course-card-use.active {
+  color: var(--in-book);
+  opacity: 1;
+  cursor: default;
 }
 
 .course-card-delete {
@@ -1145,13 +1322,12 @@ h3 {
     flex-wrap: wrap;
   }
   h1 { font-size: 0.85rem; }
-  #course-tabs {
+  #active-course {
     order: 99;
     width: 100%;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    min-width: 0;
   }
+  #active-course.ac-chip { overflow: hidden; }
 
   #upload-course-form {
     flex-direction: column;
@@ -1165,7 +1341,7 @@ h3 {
     flex-direction: column;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 54px;
+    padding-bottom: 70px;   /* clears the fixed bottom tab bar */
   }
 
   #mobile-bottom-bar {
@@ -1204,7 +1380,6 @@ h3 {
     flex-shrink: 0;
     justify-content: flex-start;
     padding: 10px;
-    padding-bottom: 130px;
     gap: 6px;
   }
 
@@ -1237,19 +1412,50 @@ h3 {
   }
   #position-comment { height: auto; overflow-y: visible; }
 
-  #board-controls button {
-    width: 47px;
-    height: 47px;
-    font-size: 1rem;
+  /* Controls span the board width and share it out between themselves, so the row
+     scales with the screen instead of overflowing once buttons are added. */
+  #board-controls {
+    width: 100%;
+    max-width: calc(var(--sq-size) * 8);
+    gap: 4px;
   }
+  #board-controls button {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: 47px;
+    height: 44px;
+    font-size: clamp(0.75rem, 3.4vw, 1rem);
+  }
+  #move-indicator {
+    flex: 2 1 0;
+    min-width: 0;
+    font-size: clamp(0.68rem, 2.9vw, 0.82rem);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #book-indicator { flex: 0 0 auto; }
+  #flip-btn { margin-left: 0; }
 
+  /* The Game tab is one scrolling column: board first, detail panel below it.
+     The panel flows with the page rather than scrolling inside itself, so there
+     is only ever one scrollbar. */
   #right-panel {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+    flex: none;
+    overflow-y: visible;
     border-left: none;
     border-top: 1px solid var(--border);
   }
+
+  #empty-state {
+    height: auto;
+    padding: 24px 8px;
+  }
+
+  /* Practice has purpose-built mobile UI already — #mobile-practice-bar under the
+     board and the move list in the Practice tab — so don't stack a second copy. */
+  main.mobile-show-right #practice-view { display: none !important; }
 
   #left-panel, #upload-panel {
     flex: 1;
@@ -1260,7 +1466,6 @@ h3 {
   }
 
   main.mobile-show-right #left-panel  { display: none; }
-  main.mobile-show-right #right-panel { display: none; }
   main.mobile-show-left  #right-panel { display: none; }
   main.mobile-show-left  #board-panel { display: none; }
 

@@ -9,8 +9,8 @@
 <body>
   <header>
     <h1>♟ Repertoire Trainer</h1>
-    <div id="course-tabs">
-      <!-- tabs rendered dynamically by renderCourseTabs() -->
+    <div id="active-course">
+      <!-- passive chip rendered by renderActiveCourse(); switching is done in the Courses tab -->
     </div>
     <button id="add-course-btn" title="Add repertoire PGN">+</button>
     <div id="header-status"></div>
@@ -70,8 +70,11 @@
         <h2>Your Game</h2>
         <div id="lichess-import">
           <input id="lichess-username" type="text" placeholder="Lichess username" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-          <button id="lichess-import-btn">Import last game</button>
+          <button id="lichess-import-btn">Import games</button>
           <p id="lichess-error"></p>
+        </div>
+        <div id="lichess-games">
+          <!-- populated by renderLichessGames() -->
         </div>
         <textarea id="pgn-input" placeholder="Paste your game PGN here...&#10;&#10;[Event &quot;Blitz&quot;]&#10;[White &quot;You&quot;]&#10;...&#10;1. e4 e5 2. Nf3 ..."></textarea>
         <button id="analyze-btn">Analyze Game</button>
@@ -121,6 +124,7 @@
         <span id="move-indicator">—</span><span id="book-indicator"></span>
         <button id="next-btn" title="Next">▶</button>
         <button id="end-btn" title="End">⏭</button>
+        <button id="flip-btn" title="Flip board">⇅</button>
       </div>
       <div id="position-comment"></div>
       <!-- Appears when navigating back through a finished practice game -->
@@ -153,6 +157,16 @@
         </div>
         <div id="study-moves"></div>
         <div id="study-annotation"></div>
+      </div>
+
+      <!-- Explore view — free move-making on the board -->
+      <div id="explore-view" style="display:none">
+        <h2>Explore</h2>
+        <p id="explore-status"></p>
+        <div id="explore-moves"></div>
+        <div id="explore-cont-label">Book continuations</div>
+        <div id="explore-continuations"></div>
+        <button id="explore-reset-btn">↺ Back to start</button>
       </div>
 
       <!-- Practice live view -->
