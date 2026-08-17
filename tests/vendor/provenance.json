@@ -1,0 +1,7 @@
+{
+  "file": "chess.min.js",
+  "version": "0.10.3",
+  "source": "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js",
+  "sha256": "7aa430df2b9311849040851adef30c4de49f6c8cefdb80645a4262f1f95c445f",
+  "why": "Tests run the same chess.js the page loads from the CDN, without needing network. vendor.test.js fails if index.html is repointed at a different version without re-vendoring this copy."
+}
