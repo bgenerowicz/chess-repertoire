@@ -557,6 +557,8 @@ function renderAnalysis(comparison, lines) {
     devInfoEl.textContent = '';
   }
 
+  renderDeviationBranches(comparison, lines);
+
   // Matched lines
   const matched = getMatchedLines(comparison, lines);
   const matchedEl = document.getElementById('matched-lines');
@@ -583,7 +585,128 @@ function renderAnalysis(comparison, lines) {
 
 // ── UI – Study ────────────────────────────────────────────────────────────────
 
-function showStudyLine(lineIdx, comparison) {
+// ── Deviation branches ────────────────────────────────────────────────────────
+// At the point the game left book, show what was actually played alongside what
+// the repertoire plays, both navigable from the same position.
+
+const BRANCH_PLIES = 8;   // how much of each continuation to show
+
+// Repertoire lines that follow the game up to `devIdx`, grouped by the move they
+// play there. Read off the lines directly rather than via getMatchedLines, so it
+// still works when the game left book on move 1 (nothing "matched" in that case).
+function bookBranchesAt(comparison, lines, devIdx) {
+  const played = comparison.slice(0, devIdx).map(m => m.san);
+  const branches = [];
+  const seen = new Set();
+
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const line = lines[lineIdx];
+    if (line.moves.length <= devIdx) continue;
+    if (!played.every((san, i) => line.moves[i]?.san === san)) continue;
+
+    const san = line.moves[devIdx].san;
+    if (seen.has(san)) continue;
+    seen.add(san);
+    branches.push({ san, lineIdx, line, moves: line.moves.slice(devIdx) });
+  }
+  return branches;
+}
+
+// Renders `moves` as numbered, clickable tokens starting at ply `startPly`.
+function appendBranchMoves(container, moves, startPly, tokenClass, onPick) {
+  moves.slice(0, BRANCH_PLIES).forEach((move, i) => {
+    const ply = startPly + i;
+    const isWhite = ply % 2 === 0;
+
+    if (isWhite || i === 0) {
+      const num = document.createElement('span');
+      num.className = 'db-num';
+      num.textContent = `${Math.floor(ply / 2) + 1}${isWhite ? '.' : '...'}`;
+      container.appendChild(num);
+    }
+
+    const token = document.createElement('span');
+    token.className = `db-move ${tokenClass}`;
+    token.textContent = move.san;
+    if (move.comment) token.title = move.comment;
+    token.addEventListener('click', () => {
+      // Only one move across both branches is current — it's what the board shows
+      document.querySelectorAll('#deviation-branches .db-move.current')
+        .forEach(n => n.classList.remove('current'));
+      token.classList.add('current');
+      onPick(ply, i);
+    });
+    container.appendChild(token);
+  });
+
+  if (moves.length > BRANCH_PLIES) {
+    const more = document.createElement('span');
+    more.className = 'db-more';
+    more.textContent = '…';
+    container.appendChild(more);
+  }
+}
+
+function renderDeviationBranches(comparison, lines) {
+  const el = document.getElementById('deviation-branches');
+  el.innerHTML = '';
+
+  const devIdx = comparison.findIndex(m => m.status === 'deviation');
+  if (devIdx < 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+
+  // What you actually played, from the deviation onward
+  const gameRow = document.createElement('div');
+  gameRow.className = 'db-row';
+  const gameLabel = document.createElement('div');
+  gameLabel.className = 'db-label db-label-game';
+  gameLabel.textContent = 'You played';
+  const gameMoves = document.createElement('div');
+  gameMoves.className = 'db-moves';
+  appendBranchMoves(gameMoves, comparison.slice(devIdx), devIdx, 'db-move-game',
+    ply => {
+      state.navIdx = ply + 1;
+      updateBoardDisplay();
+      updateContinueBar();
+    });
+  gameRow.appendChild(gameLabel);
+  gameRow.appendChild(gameMoves);
+  el.appendChild(gameRow);
+
+  // What the repertoire plays instead
+  const branches = bookBranchesAt(comparison, lines ?? [], devIdx);
+  if (branches.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'db-row db-empty';
+    empty.textContent = 'No repertoire continuation from this position.';
+    el.appendChild(empty);
+    return;
+  }
+
+  for (const branch of branches) {
+    const row = document.createElement('div');
+    row.className = 'db-row';
+
+    const label = document.createElement('div');
+    label.className = 'db-label db-label-book';
+    label.textContent = 'Book';
+    const name = document.createElement('span');
+    name.className = 'db-line-name';
+    name.textContent = branch.line.name || branch.line.chapter || '';
+    label.appendChild(name);
+
+    const moves = document.createElement('div');
+    moves.className = 'db-moves';
+    appendBranchMoves(moves, branch.moves, devIdx, 'db-move-book',
+      ply => showStudyLine(branch.lineIdx, comparison, ply));
+
+    row.appendChild(label);
+    row.appendChild(moves);
+    el.appendChild(row);
+  }
+}
+
+function showStudyLine(lineIdx, comparison, atMoveIdx = null) {
   resetExplore();
   const lines = state.analysisLines ?? state.courseData[state.activeCourse]?.lines ?? [];
   const line = lines[lineIdx];
@@ -645,9 +768,10 @@ function showStudyLine(lineIdx, comparison) {
   }
 
   state.navMode = 'study';
-  // Navigate to deviation point or start
-  const startIdx = devMoveIdx !== null ? Math.max(0, devMoveIdx) : 0;
-  setNavState(fens, froms, tos, comments, startIdx + 1);
+  // Navigate to the requested move, else the deviation point, else the start
+  const startIdx = atMoveIdx != null ? atMoveIdx
+    : (devMoveIdx !== null ? Math.max(0, devMoveIdx) : 0);
+  setNavState(fens, froms, tos, comments, Math.min(startIdx + 1, fens.length - 1));
   updateStudyAnnotation(startIdx);
 
   showPanel('study');

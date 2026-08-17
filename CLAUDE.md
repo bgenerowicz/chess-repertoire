@@ -34,6 +34,7 @@ Parsing and matching:
 - `compareToTrie(gameMoves, trie)` — annotates each move `in-book` / `deviation` / `post-dev`
 - `pickBestCourse(moves)` — which loaded course a game follows furthest
 - `bookContinuations(key)` — every book move from a position, unioned across all loaded courses, with course attribution
+- `bookBranchesAt(comparison, lines, devIdx)` / `renderDeviationBranches` — the played-vs-book comparison at a deviation
 
 Board and state:
 - `loadCourse(courseIdx)` — parses and caches into `state.courseData[idx]`
@@ -76,6 +77,14 @@ Lichess:
 - Click-to-select (`handleBoardClick`) or pointer drag (`startPieceDrag` / `moveDrag` / `endDrag`, wired in `initDragListeners`)
 - These handlers are **shared by practice and explore** and branch on `state.practiceActive` — a change to one path needs checking against the other
 - Listeners cover mouse and touch together, so iOS quirks (double-tap zoom, ghost clicks) surface here first
+
+## Deviation branches
+
+Where a game leaves book, `#deviation-branches` shows the played continuation next to the repertoire's, both navigable from the same position.
+
+- Book branches are read off the course lines directly (`bookBranchesAt`), not via `getMatchedLines`, so they still appear when the game left book on move 1 — nothing "matched" in that case
+- One row per *distinct* book move at the deviation, so both alternatives show when the repertoire branches there
+- Clicking a played move drives the game nav in place; clicking a book move hands over to `showStudyLine(lineIdx, comparison, atMoveIdx)`, which lands on that exact move. "← Back to analysis" returns
 
 ## Explore mode
 
@@ -129,6 +138,7 @@ How it works, since the app has no module system:
 - `loadApp(names, { fakeTimers })` stubs `document` / `localStorage` / `indexedDB` with a minimal `El` class and loads the **real** chess.js from `tests/vendor/`. Do not stub chess.js: several paths call `chess.move` before any early return. `fakeTimers` captures `setTimeout` so practice's computer reply can be run on demand.
 - `tests/vendor/provenance.json` records the version and checksum. `vendor.test.js` fails if `index.html` is repointed at a different chess.js without re-vendoring, so the tests can't silently drift from what the page actually loads.
 - Functions the tests reach must be top-level in `app.js`. Anything defined inside the `DOMContentLoaded` closure is unreachable — assert on its side effects instead (see the `selectLichessGame` case in `lichess.test.js`).
+- The stub supports `querySelectorAll` for the selector shapes app.js uses (comma-separated `#id` / `.class` compounds, optionally with a descendant part). Attribute selectors are not supported — they only drive browser-only drag visuals. If a selector silently matches nothing, check it against `matchesCompound` in `harness.js` before assuming the app is wrong.
 
 For **layout** there is no automated coverage; use headless Chrome (`--headless=new --screenshot --virtual-time-budget`). Two traps, both of which have already produced false conclusions here:
 

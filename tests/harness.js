@@ -37,8 +37,17 @@ export class El {
   set innerHTML(v) { this._html = v; if (v === '') this.children = []; }
   get innerHTML() { return this._html; }
   addEventListener(ev, fn) { (this.handlers[ev] ||= []).push(fn); }
-  appendChild(child) { this.children.push(child); return child; }
-  querySelectorAll() { return []; }
+  appendChild(child) { child.parent = this; this.children.push(child); return child; }
+  /** Does this element carry `cls`? className is sometimes assigned as a raw string. */
+  hasClass(cls) {
+    return this._classes.has(cls) || String(this.className).split(/\s+/).includes(cls);
+  }
+  descendants(out = []) {
+    for (const child of this.children) { out.push(child); child.descendants(out); }
+    return out;
+  }
+  querySelectorAll(selector) { return matchAll(this.descendants(), selector); }
+  querySelector(selector) { return this.querySelectorAll(selector)[0] ?? null; }
   click() { (this.handlers.click || []).forEach(fn => fn({})); }
   /** Concatenated text of this element's children — handy for chips built from spans. */
   childText() { return this.children.map(c => c.textContent).join(' '); }
@@ -46,6 +55,39 @@ export class El {
   getBoundingClientRect() {
     return { left: 0, top: 0, right: 400, bottom: 400, width: 400, height: 400 };
   }
+}
+
+/**
+ * Enough of a selector engine for what app.js actually uses: comma-separated
+ * groups of `#id` / `.class` compounds, optionally with a descendant part
+ * ("#deviation-branches .db-move.current"). Attribute selectors are not
+ * supported — those only drive browser-only drag visuals.
+ */
+function matchesCompound(el, compound) {
+  const id = compound.match(/#([\w-]+)/);
+  if (id && el.id !== id[1]) return false;
+  return [...compound.matchAll(/\.([\w-]+)/g)].every(m => el.hasClass(m[1]));
+}
+
+function hasAncestorMatching(el, compound) {
+  for (let node = el.parent; node; node = node.parent) {
+    if (matchesCompound(node, compound)) return true;
+  }
+  return false;
+}
+
+function matchAll(candidates, selector) {
+  const found = new Set();
+  for (const group of String(selector).split(',').map(s => s.trim()).filter(Boolean)) {
+    const parts = group.split(/\s+/);
+    const target = parts.at(-1);
+    for (const el of candidates) {
+      if (!matchesCompound(el, target)) continue;
+      if (parts.length > 1 && !hasAncestorMatching(el, parts[0])) continue;
+      found.add(el);
+    }
+  }
+  return [...found];
 }
 
 /**
@@ -62,11 +104,18 @@ export async function loadApp(expose = [], { fakeTimers = false } = {}) {
     return els.get(id);
   };
 
+  // Every element reachable from an id root, so document-wide selectors work.
+  const allElements = () => {
+    const out = [];
+    for (const root of els.values()) { out.push(root); root.descendants(out); }
+    return out;
+  };
+
   globalThis.document = {
     addEventListener() {},
     getElementById: getEl,
-    querySelector: () => new El(),
-    querySelectorAll: () => [],
+    querySelectorAll: sel => matchAll(allElements(), sel),
+    querySelector: sel => matchAll(allElements(), sel)[0] ?? new El(),
     createElement: tag => { const el = new El(); el.tag = tag; return el; },
     body: new El('body'),
   };
