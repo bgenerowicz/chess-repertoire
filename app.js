@@ -746,7 +746,8 @@ function handleAnalyze() {
 
   renderAnalysis(comparison, courseData.lines);
 
-  // On mobile, switch to board view and show matched lines modal
+  // On mobile, switch to the board view. The analysis (matched lines included)
+  // now stacks under the board there, so no modal is needed to surface it.
   const mainEl = document.querySelector('main');
   if (mainEl.classList.contains('mobile-show-left')) {
     mainEl.classList.remove('mobile-show-left');
@@ -754,7 +755,6 @@ function handleAnalyze() {
     document.querySelectorAll('.mobile-tab').forEach(b =>
       b.classList.toggle('active', b.dataset.panel === 'right' && !b.dataset.lmode));
     document.getElementById('back-btn')._analyzeReturn = true;
-    showAnalysisMatchedModal();
   }
 }
 
@@ -2078,35 +2078,6 @@ function showPracticeLinesModal() {
 
 function closePracticeLinesModal() {
   document.getElementById('practice-lines-modal').style.display = 'none';
-}
-
-function showAnalysisMatchedModal() {
-  const comparison = state.comparison;
-  const courseData = state.courseData[state.activeCourse];
-  if (!comparison || !courseData) return;
-
-  const matched = getMatchedLines(comparison, courseData.lines);
-  const listEl = document.getElementById('plm-list');
-  listEl.innerHTML = '';
-
-  if (matched.length === 0) {
-    listEl.innerHTML = '<p class="plm-empty">No matching repertoire lines.</p>';
-  } else {
-    for (const { line, lineIdx, depth } of matched) {
-      const item = document.createElement('div');
-      item.className = 'plm-item';
-      item.innerHTML = `
-        <div class="plm-line">${escHtml(line.name || line.chapter || '—')}</div>
-        <div class="plm-depth">${depth} move${depth !== 1 ? 's' : ''} matched</div>`;
-      item.addEventListener('click', () => {
-        closePracticeLinesModal();
-        browseCourseLine(state.activeCourse, lineIdx);
-      });
-      listEl.appendChild(item);
-    }
-  }
-
-  document.getElementById('practice-lines-modal').style.display = '';
 }
 
 function updateMobilePracticeBar(mode, data = {}) {
